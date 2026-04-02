@@ -29,8 +29,6 @@ namespace Game.Base
 
         public LevelStats[] statsPerLevel = new LevelStats[3];
 
-        public CircleRun.CardData runCardReward;
-
         public int CurrentPopulationIncome => statsPerLevel[Mathf.Clamp(level - 1, 0, 2)].populationIncome;
         public int CurrentIQBuff => statsPerLevel[Mathf.Clamp(level - 1, 0, 2)].iqBuff;
         public int CurrentCharismaBuff => statsPerLevel[Mathf.Clamp(level - 1, 0, 2)].charismaBuff;

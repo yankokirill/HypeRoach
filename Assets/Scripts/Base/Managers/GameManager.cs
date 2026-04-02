@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Game.Core;
+using System.Linq;
 
 namespace Game.Base
 {
     public class GameManager : MonoBehaviour
     {
         public static GameManager Instance { get; private set; }
-        
+
         [Header("Prefabs")]
-        [SerializeField] private CardView cardPrefab;
+        public CardView cardPrefab;
 
         [Header("Card System")]
-        [SerializeField] private CardDatabase mainDatabase;
+        public CardDatabase mainDatabase;
 
         [Header("Hierarchy References")]
         public Transform dragLayer;
@@ -22,49 +23,48 @@ namespace Game.Base
         [Header("Game Settings")]
         [SerializeField] private int startingResources = 500;
 
-        // ── Events (For UI to listen to) ─────────────────────────────
         public event Action<int> OnResourcesChanged;
         public event Action<GridSlot> OnSlotSelected;
         public event Action OnStatsChanged;
 
-        // ── Core State ───────────────────────────────────────────────
-        private GridSlot selectedSlot;
         private List<CardData> deck = new List<CardData>();
+        private GridSlot selectedSlot;
 
-        private void Awake()
-        {
-            if (Instance == null) Instance = this;
-            else Destroy(gameObject);
-        }
+        private void Awake() => Instance = this;
 
-        private void Start()
-        {
-            Initialize();
-        }
+        private void Start() => Initialize();
 
         private void Initialize()
         {
-            if (ProfileManager.Instance != null && ProfileManager.Instance.profile.totalPopulation == 0)
-            {
-                ProfileManager.Instance.profile.currentResources = startingResources;
-            }
+            if (ProfileManager.Instance == null) return;
+            var profile = ProfileManager.Instance.profile;
 
+            // Сначала строим колоду (нужна и для новой игры, и для DrawCard потом)
             BuildDeck();
 
-            for (int i = 0; i < 5; i++) DrawCard();
+            if (profile.isFirstRun)
+            {
+                Debug.Log("Первый запуск. Подготовка новой фермы...");
+                profile.isFirstRun = false;
+                profile.currentResources = startingResources;
+                // Раздаем 5 стартовых карт
+                for (int i = 0; i < 5; i++) DrawCard();
+            }
+            else
+            {
+                Debug.Log("Загрузка сохраненной базы...");
+                LoadGridState(profile.placedCardsOnGrid);
+                LoadHandState(profile.hand);
+            }
 
             OnResourcesChanged?.Invoke(GetCurrentResources());
         }
 
+        // --- ЛОГИКА КОЛОДЫ ---
         private void BuildDeck()
         {
-            if (mainDatabase == null)
-            {
-                Debug.LogError("Main Database не назначена в GameManager!");
-                return;
-            }
-
-            // Наполняем игровую колоду клонами данных из базы
+            if (mainDatabase == null) return;
+            deck.Clear();
             foreach (var cardTemplate in mainDatabase.allCards)
             {
                 deck.Add(cardTemplate.Clone());
@@ -79,19 +79,89 @@ namespace Game.Base
 
         public void DrawCard()
         {
-            if (playerHand.Count >= playerHand.maxHandSize) return;
-            CardData newCardData = GetRandomCardData();
-            if (newCardData == null) return;
+            CardData data = GetRandomCardData();
+            if (data != null) DrawSpecificCard(data);
+        }
 
+        public void DrawSpecificCard(CardData cardData)
+        {
+            if (playerHand.Count >= playerHand.maxHandSize) return;
             CardView newCard = Instantiate(cardPrefab, playerHand.handParent);
-            newCard.Initialize(newCardData);
+            newCard.Initialize(cardData);
             playerHand.AddCard(newCard);
         }
 
-        public void OnCardPlaced(CardView card, GridSlot slot)
+        // --- СОХРАНЕНИЕ / ЗАГРУЗКА ---
+        public void SaveState()
         {
-            playerHand.RemoveCard(card);
+            if (ProfileManager.Instance == null) return;
+            var profile = ProfileManager.Instance.profile;
+
+            // Сохраняем сетку
+            profile.placedCardsOnGrid.Clear();
+            // Сортируем слоты по позиции, чтобы порядок всегда был одинаковым
+            GridSlot[] slots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None)
+                                .OrderBy(s => s.transform.position.y)
+                                .ThenBy(s => s.transform.position.x).ToArray();
+
+            foreach (var slot in slots)
+            {
+                profile.placedCardsOnGrid.Add(slot.IsEmpty ? null : slot.GetCard().cardData);
+            }
+
+            // Сохраняем руку
+            profile.hand.Clear();
+            foreach (var cardView in playerHand.GetCards())
+            {
+                profile.hand.Add(cardView.cardData);
+            }
+
+            Debug.Log("Состояние базы сохранено!");
         }
+
+        private void LoadGridState(List<CardData> savedCards)
+        {
+            GridSlot[] slots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None)
+                                .OrderBy(s => s.transform.position.y)
+                                .ThenBy(s => s.transform.position.x).ToArray();
+
+            for (int i = 0; i < Mathf.Min(savedCards.Count, slots.Length); i++)
+            {
+                if (savedCards[i] != null)
+                {
+                    CardView newCard = Instantiate(cardPrefab, slots[i].transform);
+                    newCard.Initialize(savedCards[i]);
+                    slots[i].PlaceCard(newCard);
+                }
+            }
+        }
+
+        private void LoadHandState(List<CardData> savedCards)
+        {
+            foreach (var data in savedCards) DrawSpecificCard(data);
+        }
+
+        // --- ЭКОНОМИКА И СОБЫТИЯ ---
+        public int GetCurrentResources() => ProfileManager.Instance != null ? ProfileManager.Instance.profile.currentResources : startingResources;
+
+        public bool CanAfford(int amount) => GetCurrentResources() >= amount;
+
+        public void AddResources(int amount)
+        {
+            if (ProfileManager.Instance == null) return;
+            ProfileManager.Instance.profile.currentResources += amount;
+            OnResourcesChanged?.Invoke(ProfileManager.Instance.profile.currentResources);
+        }
+
+        public bool SpendResources(int amount)
+        {
+            if (!CanAfford(amount) || ProfileManager.Instance == null) return false;
+            ProfileManager.Instance.profile.currentResources -= amount;
+            OnResourcesChanged?.Invoke(ProfileManager.Instance.profile.currentResources);
+            return true;
+        }
+
+        public void OnCardPlaced(CardView card, GridSlot slot) => playerHand.RemoveCard(card);
 
         public void OnSlotClicked(GridSlot slot)
         {
@@ -99,38 +169,6 @@ namespace Game.Base
             OnSlotSelected?.Invoke(slot);
         }
 
-        public int GetCurrentResources()
-        {
-            return ProfileManager.Instance != null ? ProfileManager.Instance.profile.currentResources : startingResources;
-        }
-
-        public bool CanAfford(int amount) => GetCurrentResources() >= amount;
-
-        public void AddResources(int amount)
-        {
-            if (ProfileManager.Instance != null)
-            {
-                ProfileManager.Instance.profile.currentResources += amount;
-                OnResourcesChanged?.Invoke(ProfileManager.Instance.profile.currentResources);
-            }
-        }
-
-        public bool SpendResources(int amount)
-        {
-            if (!CanAfford(amount)) return false;
-
-            if (ProfileManager.Instance != null)
-            {
-                ProfileManager.Instance.profile.currentResources -= amount;
-                OnResourcesChanged?.Invoke(ProfileManager.Instance.profile.currentResources);
-                return true;
-            }
-            return false;
-        }
-
-        public void NotifyStatsChanged()
-        {
-            OnStatsChanged?.Invoke();
-        }
+        public void NotifyStatsChanged() => OnStatsChanged?.Invoke();
     }
 }

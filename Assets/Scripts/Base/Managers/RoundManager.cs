@@ -1,5 +1,8 @@
-﻿using UnityEngine;
-using Game.Core;
+﻿using Game.Core;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Game.Base
 {
@@ -10,16 +13,36 @@ namespace Game.Base
         public UIManager uiManager;
         public DraftManager draftManager;
 
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
-            {
-                // Блокируем завершение следующего раунда, если игрок еще выбирает карту
-                if (draftManager != null && draftManager.IsDrafting) return;
+        [Header("One-time Bonus Button")]
+        [SerializeField] private Button getBonusButton;
 
-                ProcessEndOfRound();
+        // --- ЛОГИКА БОНУСНОГО ДРАФТА ---
+
+        public void ClaimBonusDraft()
+        {
+            if (ProfileManager.Instance == null || draftManager == null) return;
+
+            // 1. Делаем кнопку неактивной (вместо удаления)
+            DisableBonusButton();
+
+            // 2. Запускаем выбор карт
+            Debug.Log("Запуск бонусного выбора карт!");
+            draftManager.StartDraft();
+        }
+
+        private void DisableBonusButton()
+        {
+            if (getBonusButton != null)
+            {
+                getBonusButton.interactable = false; // Кнопка станет серой и некликтабельной
+
+                // Опционально: можно поменять текст на кнопке, если он есть
+                Text btnText = getBonusButton.GetComponentInChildren<Text>();
+                if (btnText != null) btnText.text = "ПОЛУЧЕНО";
             }
         }
+
+        // --- ЛОГИКА ЗАВЕРШЕНИЯ РАУНДА ---
 
         public void ProcessEndOfRound()
         {
@@ -30,6 +53,10 @@ namespace Game.Base
 
             int roundResources = 0;
             int roundPopulation = 0;
+
+            // Пересчет характеристик Чемпиона на основе текущих построек
+            profile.baseIQ = 0;
+            profile.baseCharisma = 0;
 
             foreach (GridSlot slot in allSlots)
             {
@@ -45,35 +72,26 @@ namespace Game.Base
             }
 
             profile.totalPopulation += roundPopulation;
-
-            // Начисление ресурсов
-            if (gameManager != null)
-            {
-                gameManager.AddResources(roundResources);
-            }
-            else
-            {
-                profile.currentResources += roundResources;
-            }
+            if (gameManager != null) gameManager.AddResources(roundResources);
 
             profile.ValidateStats();
-            Debug.Log($"Раунд завершен! +{roundPopulation} Тараканов, +{roundResources} Ресурсов.");
+            if (uiManager != null) uiManager.RefreshStats();
 
-            // Обновление UI
-            if (uiManager != null)
-                uiManager.RefreshStats();
-
-            // Проверка победы
-            if (profile.totalPopulation >= 1000)
-            {
-                Debug.Log("🏆 ВЫ ПОБЕДИЛИ! Достигнуто 1000 Тараканов!");
-            }
-
-            // Вызываем панель выбора карт в конце раунда
-            if (draftManager != null)
-            {
-                draftManager.StartDraft();
-            }
+            // ЗАПУСКАЕМ ЗАДЕРЖКУ И ПЕРЕХОД
+            StartCoroutine(WaitAndStartRace());
         }
+
+        // Вспомогательный метод (Корутина)
+        private IEnumerator WaitAndStartRace()
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.SaveState();
+            }
+
+            yield return new WaitForSeconds(1.0f);
+            SceneManager.LoadScene("Race");
+        }
+
     }
 }

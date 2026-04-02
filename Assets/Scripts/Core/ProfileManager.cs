@@ -14,9 +14,10 @@ namespace Game.Core
         public int baseIQ = 0;
         public int baseCharisma = 0;
 
-        [Header("Decks")]
-        public List<Base.CardData> collection = new List<Base.CardData>();
-        public List<Run.CardData> runDeck = new List<Run.CardData>();
+        [Header("Save State")]
+        public bool isFirstRun = true;
+        public List<Base.CardData> placedCardsOnGrid = new List<Base.CardData>();
+        public List<Base.CardData> hand = new List<Base.CardData>();
 
         public void ValidateStats()
         {

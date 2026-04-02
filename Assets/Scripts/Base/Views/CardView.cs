@@ -128,7 +128,6 @@ namespace Game.Base
             canvasGroup.blocksRaycasts = false;
         }
 
-        // --- ИСПРАВЛЕННЫЙ ТАСК (убрано ограничение по Slot) ---
         public void OnDrag(PointerEventData eventData)
         {
             if (!isDragging) return;
