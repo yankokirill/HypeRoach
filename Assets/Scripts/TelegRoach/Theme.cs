@@ -12,8 +12,8 @@ public static class Theme
     public static readonly Color CHECK_UNREAD = HexColor("9BB8D0");
 
     public const int AVATAR_SIZE = 34;
-    public const int PAD_H = 14;
-    public const int PAD_V = 10;
+    public const int PAD_H = 21;
+    public const int PAD_V = 15;
     public const int MSG_SPACING = 6;
 
     private static Sprite _roundedBubbleSprite;

@@ -38,6 +38,7 @@ namespace Game.Base
         {
             if (ProfileManager.Instance == null) return;
             var profile = ProfileManager.Instance.profile;
+            Debug.Log($"Рубли: {profile.currentResources}");
 
             // Сначала строим колоду (нужна и для новой игры, и для DrawCard потом)
             BuildDeck();

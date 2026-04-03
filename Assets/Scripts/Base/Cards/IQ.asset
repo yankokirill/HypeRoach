@@ -15,7 +15,7 @@ MonoBehaviour:
   cardID: iq
   cardName: "\u0428\u043F\u043E\u0440\u0430 \u043F\u043E \u043C\u0430\u0442\u0430\u043D\u0443"
   type: 0
-  art: {fileID: 0}
+  art: {fileID: -1679115157575341710, guid: 5078d3058121d3845a075a243997d688, type: 3}
   level: 1
   maxLevel: 3
   statsPerLevel:
@@ -42,4 +42,3 @@ MonoBehaviour:
     description: "\u0421\u0432\u0435\u0440\u0445\u0440\u0430\u0437\u0443\u043C\u044B.
       \u041F\u043E\u0437\u043D\u0430\u043B\u0438 \u0432\u0441\u0435\u043B\u0435\u043D\u043D\u0443\u044E
       \u0438 \u0441\u0442\u0430\u043B\u0438 \u0447\u0443\u0442\u044C \u0445\u0430\u0440\u0438\u0437\u043C\u0430\u0442\u0438\u0447\u043D\u0435\u0435."
-  runCardReward: {fileID: 0}

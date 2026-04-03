@@ -15,7 +15,7 @@ MonoBehaviour:
   cardID: hype
   cardName: "\u0421\u0442\u0440\u0438\u043C\u0435\u0440\u0441\u043A\u0430\u044F \u0412\u0435\u0431\u043A\u0430"
   type: 0
-  art: {fileID: 0}
+  art: {fileID: -6401372433835080282, guid: c50768ccbe88ed649870366ecc6631dd, type: 3}
   level: 1
   maxLevel: 3
   statsPerLevel:
@@ -43,4 +43,3 @@ MonoBehaviour:
     description: "\u0417\u0432\u0435\u0437\u0434\u043D\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441!
       \u0428\u0442\u0440\u0430\u0444\u043E\u0432 \u043D\u0435\u0442, \u0443\u043C\u043D\u0435\u044E\u0442
       \u043E\u0442 \u0441\u0442\u0440\u0438\u043C\u043E\u0432."
-  runCardReward: {fileID: 0}

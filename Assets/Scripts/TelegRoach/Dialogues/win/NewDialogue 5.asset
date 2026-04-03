@@ -12,4 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd89ac3767350f0468390e0322785532, type: 3}
   m_Name: NewDialogue 5
   m_EditorClassIdentifier: 
-  messages: []
+  messages:
+  - sender: 2
+    text: "\u0445\u043E\u0440\u043E\u0448\u043E"
+    delayAfter: 5
+  - sender: 2
+    text: "\u043E\u0447\u0435\u043D\u044C \u0445\u043E\u0440\u043E\u0448\u043E"
+    delayAfter: 0

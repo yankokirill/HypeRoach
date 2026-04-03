@@ -12,4 +12,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd89ac3767350f0468390e0322785532, type: 3}
   m_Name: NewDialogue 7
   m_EditorClassIdentifier: 
-  messages: []
+  messages:
+  - sender: 0
+    text: "\u0445\u043E\u0440\u043E\u0448\u0438\u0439 \u0437\u0430\u0431\u0435\u0433\r\n\u044F
+      \u0432 \u0442\u0435\u0431\u044F \u0432\u0435\u0440\u0438\u043B \u0441 \u0441\u0430\u043C\u043E\u0433\u043E
+      \u043D\u0430\u0447\u0430\u043B\u0430"
+    delayAfter: 0
+  - sender: 1
+    text: "\u0432\u0440\u0430\u0442\u044C \u043D\u0435\u0445\u043E\u0440\u043E\u0448\u043E,
+      \u0431\u043E\u0441\u0441\r\n\u044F \u0432\u0438\u0434\u0435\u043B \u0442\u0432\u043E\u0451
+      \u043B\u0438\u0446\u043E \u043D\u0430 \u0432\u0442\u043E\u0440\u043E\u043C
+      \u043A\u0440\u0443\u0433\u0435"
+    delayAfter: 0
+  - sender: 0
+    text: "\u0447\u0442\u043E \u0442\u044B \u0432\u0438\u0434\u0435\u043B?"
+    delayAfter: 2
+  - sender: 1
+    text: "\u0441\u043E\u043C\u043D\u0435\u043D\u0438\u0435"
+    delayAfter: 2
+  - sender: 0
+    text: "\u044D\u0442\u043E \u0431\u044B\u043B\u0430 \u0442\u0430\u043A\u0442\u0438\u043A\u0430"
+    delayAfter: 2
+  - sender: 1
+    text: "\u0442\u0430\u043A\u0442\u0438\u043A\u0430 \u0441\u043E\u043C\u043D\u0435\u0432\u0430\u0442\u044C\u0441\u044F?"
+    delayAfter: 2
+  - sender: 2
+    text: "\u0445\u0432\u0430\u0442\u0438\u0442"
+    delayAfter: 1
+  - sender: 0
+    text: "\u0427\u0442\u043E?"
+    delayAfter: 1
+  - sender: 2
+    text: "\u0441\u043F\u043E\u0440\u0438\u0442\u044C"
+    delayAfter: 1
+  - sender: 2
+    text: "\u043F\u043E\u0431\u0435\u0434\u0430 \u0435\u0441\u0442\u044C\r\n\u043E\u0441\u0442\u0430\u043B\u044C\u043D\u043E\u0435
+      \u043D\u0435\u0432\u0430\u0436\u043D\u043E"
+    delayAfter: 0
+  - sender: 1
+    text: "\u043C\u043E\u043B\u0447\u0443\u043D \u0441\u0435\u0433\u043E\u0434\u043D\u044F
+      \u0440\u0430\u0437\u0443\u043C\u043D\u044B\u0439"
+    delayAfter: 2
+  - sender: 0
+    text: "\u043B\u0430\u0434\u043D\u043E, \u043F\u0440\u0438\u043D\u044F\u043B\r\n\u0447\u0435\u043C\u043F\u0438\u043E\u043D,
+      \u0442\u044B \u043A\u0440\u0430\u0441\u0430\u0432\u0430"
+    delayAfter: 0
+  - sender: 2
+    text: (+)
+    delayAfter: 0

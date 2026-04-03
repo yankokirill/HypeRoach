@@ -1,3 +1,4 @@
+using Game.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,33 +84,58 @@ namespace Game.Race
             }
             lastProgress[racer] = currentProgress;
         }
+    
+    private void EndRace(Cockroach winner)
+    {
+        isRaceActive = false;
 
-        // --- ИЗМЕНЕННЫЙ МЕТОД ---
-        private void EndRace(Cockroach winner)
+        // Останавливаем движение всех участников
+        foreach (var r in allRacers)
         {
-            isRaceActive = false;
+            if (r != null) r.isRacing = false;
+        }
 
-            // Останавливаем движение всех участников
-            foreach (var r in allRacers)
-            {
-                if (r != null) r.isRacing = false;
-            }
+        Debug.Log($"ПОБЕДИТЕЛЬ: {winner.racerName}");
 
-            Debug.Log($"ПОБЕДИТЕЛЬ: {winner.racerName}");
+        // 1. Сортируем всех гонщиков по хайпу
+        var sortedResults = allRacers
+            .OrderByDescending(r => r.GetHype())
+            .ToList();
 
-            // ВЫЗОВ ОКНА НАГРАДЫ
-            if (RewardUI.Instance != null)
+        if (sortedResults.Count >= 2)
+        {
+            Cockroach firstPlace = sortedResults[0];
+            Cockroach secondPlace = sortedResults[1];
+            Debug.Log($"Первое место: {firstPlace.GetHype()} хайпа");
+            Debug.Log($"Второе место: {secondPlace.GetHype()} хайпа");
+            
+            // 2. Проверяем, является ли победитель игроком
+            if (firstPlace is PlayerCockroach && ProfileManager.Instance != null)
             {
-                // Передаем список всех гонщиков для подсчета Хайпа и мест
-                RewardUI.Instance.GenerateRewardUI(allRacers);
-            }
-            else
-            {
-                Debug.LogWarning("RaceManager: RewardUI не найден на сцене! Убедитесь, что скрипт висит на Reward Canvas.");
+                // 3. Рассчитываем награду: Хайп 1-го места минус Хайп 2-го места
+                int hypeReward = firstPlace.GetHype() - secondPlace.GetHype();
+
+                // Если разница положительная, прибавляем к ресурсам
+                if (hypeReward > 0)
+                {
+                    ProfileManager.Instance.profile.currentResources += hypeReward;
+                    Debug.Log($"RaceManager: Игрок победил! Начислено ресурсов: {hypeReward}");
+                }
             }
         }
 
-        public bool CanPlayCard(int handIndex)
+        // ВЫЗОВ ОКНА НАГРАДЫ
+        if (RewardUI.Instance != null)
+        {
+            RewardUI.Instance.GenerateRewardUI(allRacers);
+        }
+        else
+        {
+            Debug.LogWarning("RaceManager: RewardUI не найден на сцене!");
+        }
+    }
+
+    public bool CanPlayCard(int handIndex)
         {
             if (handIndex < 0 || handIndex >= currentHand.Length) return false;
             CardData card = currentHand[handIndex];

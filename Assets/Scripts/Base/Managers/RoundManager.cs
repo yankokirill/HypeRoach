@@ -8,6 +8,8 @@ namespace Game.Base
 {
     public class RoundManager : MonoBehaviour
     {
+        public static RoundManager Instance;
+
         [Header("References")]
         public GameManager gameManager;
         public UIManager uiManager;
@@ -17,6 +19,12 @@ namespace Game.Base
         [SerializeField] private Button getBonusButton;
 
         // --- ЛОГИКА БОНУСНОГО ДРАФТА ---
+
+        private void Awake()
+        {
+            if (Instance == null) Instance = this;
+            else Destroy(gameObject);
+        }
 
         public void ClaimBonusDraft()
         {

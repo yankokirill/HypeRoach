@@ -228,9 +228,9 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1610701903}
   - {fileID: 1324189569}
   - {fileID: 1926704905}
-  - {fileID: 1610701903}
   m_Father: {fileID: 914979555}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -384,10 +384,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   messenger: {fileID: 1372925842}
   startingDialogues:
-  - {fileID: 11400000, guid: 90526132f5eb02448a22407f3e4ae8ee, type: 2}
+  - {fileID: 11400000, guid: a07a0c09a55900b408b80854aba1ae38, type: 2}
   - {fileID: 11400000, guid: c1f90d25d84333f4cb51b45fe9ae5de3, type: 2}
+  - {fileID: 11400000, guid: 00dae6b853e997d48b547bae136a3c8b, type: 2}
+  - {fileID: 11400000, guid: 7300b59057a366a4aa116626faecca70, type: 2}
   - {fileID: 11400000, guid: f7bde136d143a1545997259bd6ae36fe, type: 2}
-  startingDialogue: {fileID: 11400000, guid: f7bde136d143a1545997259bd6ae36fe, type: 2}
+  - {fileID: 11400000, guid: 75432682074ca3e468e97781a6cfd9c5, type: 2}
+  - {fileID: 11400000, guid: 90526132f5eb02448a22407f3e4ae8ee, type: 2}
+  - {fileID: 11400000, guid: d8465cb62a33ea34fbe1219b0eb15f67, type: 2}
+  - {fileID: 11400000, guid: 69b0ca8f8ab0cd74a944ecab6a5d7b4d, type: 2}
+  - {fileID: 11400000, guid: e1070f43129eed14d8c1aa266f4f4d4e, type: 2}
+  - {fileID: 11400000, guid: 14c7ac74b14fe444e820166f364bd22e, type: 2}
+  - {fileID: 11400000, guid: 72d333a325c3ac346beef8c2bcf3bde3, type: 2}
+  - {fileID: 11400000, guid: 2fd305c4b6911194b8484d50fc5a0da8, type: 2}
+  - {fileID: 11400000, guid: bbea674a96dccd74c8fc59f95a515f06, type: 2}
+  startingDialogue: {fileID: 0}
 --- !u!4 &319028320
 Transform:
   m_ObjectHideFlags: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   cardID: spawn
   cardName: "\u0421\u0432\u044F\u0442\u043E\u0439 \u0414\u043E\u0448\u0438\u0440\u0430\u043A"
   type: 0
-  art: {fileID: 0}
+  art: {fileID: 5041442453978726441, guid: eadb162b936cd954ca8f252d288cc644, type: 3}
   level: 1
   maxLevel: 3
   statsPerLevel:
@@ -42,4 +42,3 @@ MonoBehaviour:
     description: "\u0413\u0438\u0433\u0430\u043D\u0442\u0441\u043A\u0430\u044F \u043A\u043E\u043B\u043E\u043D\u0438\u044F.
       \u041D\u0430\u0447\u0438\u043D\u0430\u044E\u0442 \u0432\u044B\u0437\u044B\u0432\u0430\u0442\u044C
       \u0443\u0432\u0430\u0436\u0435\u043D\u0438\u0435 (\u0425\u0430\u0440\u0438\u0437\u043C\u0430)."
-  runCardReward: {fileID: 0}
