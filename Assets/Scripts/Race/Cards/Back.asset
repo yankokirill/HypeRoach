@@ -18,9 +18,10 @@ MonoBehaviour:
   level: 1
   art: {fileID: 0}
   effect:
-    rid: -2
+    rid: 7981845352208924809
   references:
     version: 2
     RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
+    - rid: 7981845352208924809
+      type: {class: BackEffect, ns: Game.Race.Effects, asm: Assembly-CSharp}
+      data: 
