@@ -102,12 +102,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 841cc9105473bfb4484e7b8b006bad27, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hypeAmount: 20
-  sabotagePenalty: -10
-  sabotageBumpForce: 3
   iconRenderer: {fileID: 3158247772428317530}
   hypeIcon: {fileID: -7284806799716364993, guid: 441134250dae21e4dacac49c7a09cc54, type: 3}
   sabotageIcon: {fileID: -2017839897703273682, guid: 6c59d7eb6aee8014caebc25a6c2448e8, type: 3}
+  arrowIcon: {fileID: 3385855733523892640, guid: 775b5b7ff89a3ab4ba68c66e8190188d, type: 3}
   collectEffect: {fileID: 0}
 --- !u!58 &7006165518215273443
 CircleCollider2D:
@@ -144,7 +142,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 1
+  m_Radius: 2
 --- !u!1 &6993893628240426579
 GameObject:
   m_ObjectHideFlags: 0

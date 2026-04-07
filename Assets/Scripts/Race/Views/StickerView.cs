@@ -1,102 +1,150 @@
-using Game.Core;
 using UnityEngine;
 
 namespace Game.Race
 {
-    public enum StickerType
-    {
-        Hype,      // Дает очки
-        Sabotage   // Ловушка: отнимает очки и отбрасывает
-    }
+    public enum StickerType { Hype, Sabotage, Arrow }
+    public enum ArrowDirection { Forward = 0, Right = 1, Back = 2, Left = 3 }
 
     public class StickerView : MonoBehaviour
     {
-        [Header("Settings")]
-        [SerializeField] private int hypeAmount = 20;
-        [SerializeField] private int sabotagePenalty = -10;
-        [SerializeField] private float sabotageBumpForce = 3f;
-
-        [Header("Stats Influence")]
-        [Tooltip("Сколько % бонуса к хайпу дает 1 единица харизмы")]
-        [SerializeField] private float charismaMultiplier = 0.02f; // 2% за 1 ед.
-        [Tooltip("Какой шанс уклонения (0-1) дает 1 единица IQ")]
-        [SerializeField] private float iqDodgeMultiplier = 0.01f; // 1% за 1 ед.
-
         [Header("Components")]
         [SerializeField] private SpriteRenderer iconRenderer;
-        [Header("Emoji Sprites")]
+
+        [Header("Sprites")]
         [SerializeField] private Sprite hypeIcon;
         [SerializeField] private Sprite sabotageIcon;
-        [Header("VFX (Optional)")]
+        [SerializeField] private Sprite arrowIcon;
+
+        [Header("VFX")]
         [SerializeField] private GameObject collectEffect;
 
-        private StickerType currentType;
+        public StickerType CurrentType { get; private set; }
+        public ArrowDirection CurrentDirection { get; private set; }
+        public float CurrentProgress { get; private set; } // Текущий прогресс на сплайне
+
+        private StickerMovementData moveData;
+        private float initialProgress;
+        private int initialLane;
+        private int currentLogicalLane;
         private bool isCollected = false;
 
-        public void Setup(StickerType type)
+        public void Setup(
+            StickerType type,
+            int laneIndex,
+            float progress,
+            StickerMovementData movement)
         {
-            currentType = type;
+            CurrentType = type;
+            initialLane = laneIndex;
+            currentLogicalLane = laneIndex;
+
+            CurrentDirection = (ArrowDirection)Random.Range(0, 4);
+            initialProgress = progress;
+            CurrentProgress = progress;
+            moveData = movement;
+
             if (iconRenderer == null) return;
-            iconRenderer.sprite = (type == StickerType.Hype) ? hypeIcon : sabotageIcon;
+
+            if (type == StickerType.Arrow)
+            {
+                iconRenderer.sprite = arrowIcon;
+            }
+            else
+            {
+                iconRenderer.sprite = (type == StickerType.Hype) ? hypeIcon : sabotageIcon;
+            }
+
+            // Инициализируем позицию и угол
+            UpdatePositionAndVisuals(initialLane, initialProgress);
+        }
+
+        private void Update()
+        {
+            if (isCollected || !moveData.isMoving) return;
+
+            // 1. Считаем смещение по линиям
+            float laneOffset = Mathf.Sin(Time.time * moveData.laneSpeed + moveData.lanePhase) * moveData.laneAmplitude;
+            float targetLaneFloat = Mathf.Clamp(initialLane + laneOffset, 0f, 2f);
+
+            // 2. Считаем смещение по прогрессу трассы
+            float progOffset = Mathf.Sin(Time.time * moveData.progSpeed + moveData.progPhase) * moveData.progAmplitude;
+            CurrentProgress = (initialProgress + progOffset) % 1f;
+            if (CurrentProgress < 0f) CurrentProgress += 1f; // Защита от отрицательного прогресса
+
+            // 3. Обновляем логическую полосу для коллизий и правил стрелок
+            currentLogicalLane = Mathf.RoundToInt(targetLaneFloat);
+
+            // 4. Применяем расчеты
+            UpdatePositionAndVisuals(targetLaneFloat, CurrentProgress);
+        }
+
+        private void UpdatePositionAndVisuals(float targetLaneFloat, float currentProg)
+        {
+            // --- ПОЗИЦИЯ ---
+            Vector3 pos0 = Race.GetLane(0).EvaluatePosition(currentProg);
+            Vector3 pos1 = Race.GetLane(1).EvaluatePosition(currentProg);
+            Vector3 pos2 = Race.GetLane(2).EvaluatePosition(currentProg);
+
+            Vector3 finalPos;
+            if (targetLaneFloat <= 1f) finalPos = Vector3.Lerp(pos0, pos1, targetLaneFloat);
+            else finalPos = Vector3.Lerp(pos1, pos2, targetLaneFloat - 1f);
+
+            transform.position = finalPos;
+
+            // --- УГОЛ НАКЛОНА ---
+            if (CurrentType == StickerType.Arrow)
+            {
+                // Берем касательную центральной линии как базу для поворота
+                Vector3 tangent = Race.GetLane(1).EvaluateTangent(currentProg);
+                float splineAngle = Mathf.Atan2(tangent.y, tangent.x) * Mathf.Rad2Deg;
+
+                float localRotation = 0f;
+                switch (CurrentDirection)
+                {
+                    case ArrowDirection.Forward: localRotation = 180f; break;
+                    case ArrowDirection.Right: localRotation = 90f; break;
+                    case ArrowDirection.Back: localRotation = 0f; break;
+                    case ArrowDirection.Left: localRotation = -90f; break;
+                }
+
+                iconRenderer.transform.rotation = Quaternion.Euler(0, 0, splineAngle + localRotation);
+                iconRenderer.color = Color.cyan;
+            }
+            else
+            {
+                iconRenderer.transform.rotation = Quaternion.identity;
+            }
+        }
+
+        private void OnMouseDown()
+        {
+            if (CurrentType != StickerType.Arrow || isCollected) return;
+            CycleDirection();
+        }
+
+        private void CycleDirection()
+        {
+            int nextDir = ((int)CurrentDirection + 1) % 4;
+
+            CurrentDirection = (ArrowDirection)nextDir;
+
+            // Сразу обновляем визуал при клике
+            UpdatePositionAndVisuals(currentLogicalLane, CurrentProgress);
         }
 
         private void OnTriggerEnter2D(Collider2D collision)
         {
             if (isCollected) return;
-
             if (collision.TryGetComponent(out Cockroach racer))
             {
-                // Проверяем эффекты IQ и Харизмы ПЕРЕД тем как применить эффект
-                ApplyEffect(racer);
-                CollectSticker();
+                if (RaceManager.Instance != null) RaceManager.Instance.OnStickerCollected(this, racer);
             }
         }
 
-        private void ApplyEffect(Cockroach racer)
-        {
-            bool isPlayer = racer is PlayerCockroach;
-
-            // Получаем статы только если это игрок (у ботов пока статов нет)
-            int iq = isPlayer ? ProfileManager.Instance.profile.baseIQ : 0;
-            int charisma = isPlayer ? ProfileManager.Instance.profile.baseCharisma : 0;
-
-            if (currentType == StickerType.Hype)
-            {
-                // --- ЛОГИКА ХАРИЗМЫ ---
-                // Формула: БазовыйХайп + (БазовыйХайп * Харизма * Множитель)
-                float bonus = hypeAmount * (charisma * charismaMultiplier);
-                int finalHype = hypeAmount + Mathf.RoundToInt(bonus);
-
-                racer.AddHype(finalHype);
-
-                if (isPlayer && charisma > 0)
-                    Debug.Log($"<color=yellow>Бонус Харизмы!</color> Получено {finalHype} вместо {hypeAmount}");
-            }
-            else if (currentType == StickerType.Sabotage)
-            {
-                if (racer.IsInvulnerable()) return;
-
-                // --- ЛОГИКА IQ (Уворот) ---
-                // Формула: Шанс = IQ * Множитель (например 30 IQ = 30% шанс)
-                float dodgeChance = iq * iqDodgeMultiplier;
-
-                if (isPlayer && Random.value < dodgeChance)
-                {
-                    Debug.Log("<color=cyan>IQ СРАБОТАЛ!</color> Таракан просчитал траекторию ловушки и увернулся!");
-                    return; // Выходим, не применяя штраф
-                }
-
-                // Если не увернулся — штрафуем
-                racer.AddHype(sabotagePenalty);
-                racer.BumpBack(sabotageBumpForce);
-            }
-        }
-
-        private void CollectSticker()
+        public void Consume()
         {
             isCollected = true;
-            if (collectEffect != null)
-                Instantiate(collectEffect, transform.position, Quaternion.identity);
+            if (collectEffect != null) Instantiate(collectEffect, transform.position, Quaternion.identity);
             Destroy(gameObject);
         }
     }

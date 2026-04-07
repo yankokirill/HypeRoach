@@ -40,11 +40,25 @@ namespace Game.Race
             if (overlay != null) overlay.SetActive(false);
         }
 
-        private void Start()
+        private void OnEnable()
         {
             if (backButton != null)
             {
-                backButton.onClick.AddListener(() => SceneManager.LoadScene("Base"));
+                backButton.onClick.AddListener(ReturnToBase);
+            }
+        }
+
+        private void ReturnToBase()
+        {
+            if (SceneTransitionManager.Instance != null)
+            {
+                // Используем плавный переход
+                SceneTransitionManager.Instance.CommitTransition();
+            }
+            else
+            {
+                // Запасной вариант
+                SceneManager.LoadScene("Base");
             }
         }
 
@@ -63,6 +77,11 @@ namespace Game.Race
             // Включаем фон и панель
             if (overlay != null) overlay.SetActive(true);
             if (mainPanel != null) mainPanel.SetActive(true);
+
+            if (SceneTransitionManager.Instance != null)
+            {
+                SceneTransitionManager.Instance.PreloadScene("Base");
+            }
 
             // 1. Если список пуст (для теста), создаем фейковые данные
             if (racers == null || racers.Count == 0)

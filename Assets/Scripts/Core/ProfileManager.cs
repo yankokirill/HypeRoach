@@ -19,6 +19,8 @@ namespace Game.Core
         public List<Base.CardData> placedCardsOnGrid = new List<Base.CardData>();
         public List<Base.CardData> hand = new List<Base.CardData>();
 
+        public int result = 0;
+
         public void ValidateStats()
         {
             if (currentResources < 0) currentResources = 0;

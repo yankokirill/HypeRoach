@@ -1,3 +1,4 @@
+using Game.Core;
 using UnityEngine;
 
 namespace Game.Race.Effects
@@ -54,6 +55,7 @@ namespace Game.Race.Effects
             var dash = new DashModifier(dashForce);
             dash.Initialize(player, duration);
             player.AddEffect(dash);
+            if (VoiceManager.Instance != null) VoiceManager.Instance.PlayDashVoice();
         }
     }
 }

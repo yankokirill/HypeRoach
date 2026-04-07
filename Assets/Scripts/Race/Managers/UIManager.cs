@@ -21,9 +21,14 @@ namespace Game.Race
         [Header("Global Hype Settings")]
         [SerializeField] private int baseMaxHype = 100;
 
-        [Header("UI Slots (Assign in Inspector)")]
+        [Header("UI Slots")]
         [SerializeField] private RacerUIContainer playerUI;
         [SerializeField] private RacerUIContainer[] enemyUIs;
+        [SerializeField] Button stopRace;
+
+        [Header("VFX Prefabs")]
+        [SerializeField] private FloatingText floatingTextPrefab;
+
 
         private int currentMaxHype;
 
@@ -36,6 +41,13 @@ namespace Game.Race
             else Destroy(gameObject);
 
             currentMaxHype = baseMaxHype;
+        }
+
+        private void Start()
+        {
+            stopRace.onClick.AddListener(() => {
+                Core.MusicManager.Instance.StopMusicCompletely();
+            });
         }
 
         // --- »Ќ»÷»јЋ»«ј÷»я (вызывать из GameManager) ---
@@ -83,12 +95,10 @@ namespace Game.Race
                 LevelUpGlobalHype(racer);
             }
 
-            // јнимируем полоску
             if (ui.hypeSlider != null)
             {
                 ui.hypeSlider.DOValue(amount, 0.3f).SetEase(Ease.OutQuad);
             }
-
         }
 
         public void SetMana(int amount)
@@ -122,6 +132,16 @@ namespace Game.Race
             }
 
             Debug.Log($"[UI] Ќовый уровень хайпа. Ћимит: {currentMaxHype}");
+        }
+
+        public void SpawnFloatingText(Vector3 position, string text, Color color)
+        {
+            if (floatingTextPrefab == null) return;
+
+            // —павним чуть выше головы таракана
+            Vector3 spawnPos = position + Vector3.up * 0.5f;
+            FloatingText instance = Instantiate(floatingTextPrefab, spawnPos, Quaternion.identity);
+            instance.Setup(text, color);
         }
     }
 }

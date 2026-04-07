@@ -18,8 +18,6 @@ namespace Game.Base
         [Header("One-time Bonus Button")]
         [SerializeField] private Button getBonusButton;
 
-        // --- ЛОГИКА БОНУСНОГО ДРАФТА ---
-
         private void Awake()
         {
             if (Instance == null) Instance = this;
@@ -30,10 +28,7 @@ namespace Game.Base
         {
             if (ProfileManager.Instance == null || draftManager == null) return;
 
-            // 1. Делаем кнопку неактивной (вместо удаления)
             DisableBonusButton();
-
-            // 2. Запускаем выбор карт
             Debug.Log("Запуск бонусного выбора карт!");
             draftManager.StartDraft();
         }
@@ -42,64 +37,67 @@ namespace Game.Base
         {
             if (getBonusButton != null)
             {
-                getBonusButton.interactable = false; // Кнопка станет серой и некликтабельной
-
-                // Опционально: можно поменять текст на кнопке, если он есть
+                getBonusButton.interactable = false;
                 Text btnText = getBonusButton.GetComponentInChildren<Text>();
                 if (btnText != null) btnText.text = "ПОЛУЧЕНО";
             }
         }
 
-        // --- ЛОГИКА ЗАВЕРШЕНИЯ РАУНДА ---
-
         public void ProcessEndOfRound()
         {
-            if (ProfileManager.Instance == null) return;
+            SceneTransitionManager.Instance.BlockScreen();
+            // Запускаем полную последовательность действий
+            StartCoroutine(EndOfRoundSequence());
+        }
+
+        private IEnumerator EndOfRoundSequence()
+        {
+            // 1. ПРОВЕРКИ
+            if (ProfileManager.Instance == null || uiManager == null) yield break;
             PlayerProfile profile = ProfileManager.Instance.profile;
 
-            GridSlot[] allSlots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None);
+            // 2. НАЧИНАЕМ ПРЕДЗАГРУЗКУ СЦЕНЫ В ФОНЕ
+            if (SceneTransitionManager.Instance != null)
+                SceneTransitionManager.Instance.PreloadScene("Race");
 
-            int roundResources = 0;
+            // 3. РАССЧИТЫВАЕМ НОВЫЕ СТАТЫ
             int roundPopulation = 0;
+            int newIQ = 0;
+            int newCharisma = 0;
 
-            // Пересчет характеристик Чемпиона на основе текущих построек
-            profile.baseIQ = 0;
-            profile.baseCharisma = 0;
-
+            GridSlot[] allSlots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None);
             foreach (GridSlot slot in allSlots)
             {
                 if (!slot.IsEmpty && slot.GetCard() != null)
                 {
                     CardData building = slot.GetCard().cardData;
                     if (building == null) continue;
-
                     roundPopulation += building.CurrentPopulationIncome;
-                    profile.baseIQ += building.CurrentIQBuff;
-                    profile.baseCharisma += building.CurrentCharismaBuff;
+                    newIQ += building.CurrentIQBuff;
+                    newCharisma += building.CurrentCharismaBuff;
                 }
             }
+            int finalPopulation = profile.totalPopulation + roundPopulation;
 
-            profile.totalPopulation += roundPopulation;
-            if (gameManager != null) gameManager.AddResources(roundResources);
-
+            profile.totalPopulation = finalPopulation;
+            profile.baseIQ = newIQ;
+            profile.baseCharisma = newCharisma;
             profile.ValidateStats();
-            if (uiManager != null) uiManager.RefreshStats();
 
-            // ЗАПУСКАЕМ ЗАДЕРЖКУ И ПЕРЕХОД
-            StartCoroutine(WaitAndStartRace());
-        }
+            // 4. ЗАПУСКАЕМ АНИМАЦИЮ В UI И ЖДЕМ ЕЕ ОКОНЧАНИЯ
+            yield return uiManager.AnimateStatsRefresh(profile.totalPopulation, profile.baseIQ, profile.baseCharisma);
 
-        // Вспомогательный метод (Корутина)
-        private IEnumerator WaitAndStartRace()
-        {
+            // gameManager.AddResources(roundResources);
+
+            // 5. СОХРАНЯЕМ ИГРУ
             if (GameManager.Instance != null)
-            {
                 GameManager.Instance.SaveState();
-            }
 
-            yield return new WaitForSeconds(1.0f);
-            SceneManager.LoadScene("Race");
+            // 6. ЗАПУСКАЕМ ПЕРЕХОД
+            if (SceneTransitionManager.Instance != null)
+                SceneTransitionManager.Instance.CommitTransition();
+            else
+                SceneManager.LoadScene("Race");
         }
-
     }
 }

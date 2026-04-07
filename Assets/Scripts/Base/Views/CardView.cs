@@ -13,9 +13,11 @@ namespace Game.Base
         [Header("UI References")]
         [SerializeField] private Text cardNameText;
         [SerializeField] private Text descriptionText;
+        [SerializeField] private Text levelText;
         [SerializeField] private Image descriptionPanel;
         [SerializeField] private Image frameImage;
         [SerializeField] private Image headerImage;
+        [SerializeField] private Image levelImage;
 
         [Header("Animation Settings")]
         public float hoverScale = 1.15f;
@@ -64,16 +66,17 @@ namespace Game.Base
         public void Initialize(CardData data)
         {
             cardData = data;
-            Refresh();
+            Refresh(data.level);
             SetVisualMode(false);
         }
 
-        public void Refresh()
+        public void Refresh(int level)
         {
             if (cardData == null) return;
-            if (cardNameText != null) cardNameText.text = $"{cardData.cardName} [Ур.{cardData.level}]";
+            if (cardNameText != null) cardNameText.text = cardData.cardName;
             if (frameImage != null) frameImage.sprite = cardData.art;
             if (descriptionText != null) descriptionText.text = cardData.CurrentEffectText;
+            if (levelText != null) levelText.text = level.ToString();
         }
 
         public void SetSlot(GridSlot slot) => currentSlot = slot;
@@ -170,6 +173,7 @@ namespace Game.Base
             RectTransform rt = GetComponent<RectTransform>();
             if (isOnGrid)
             {
+                levelImage.gameObject.SetActive(true);
                 rt.sizeDelta = new Vector2(160, 160);
                 if (frameImage != null) frameImage.transform.localPosition = Vector3.zero;
             }

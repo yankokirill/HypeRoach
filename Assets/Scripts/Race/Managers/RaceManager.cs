@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Game.Race
 {
@@ -21,10 +22,22 @@ namespace Game.Race
         [SerializeField] private float stickerSpawnInterval = 3f;
         [SerializeField] private float spawnProgressAhead = 0.15f;
 
+        [Header("Sticker Effects Settings")]
+        [SerializeField] private int hypeAmount = 20;
+        [SerializeField] private int sabotagePenalty = -10;
+        [SerializeField] private float sabotageBumpForce = 3f;
+        [SerializeField] private float patternLength = 0.12f;
+
+        [Tooltip("Сколько % бонуса к хайпу дает 1 единица харизмы")]
+        [SerializeField] private float charismaMultiplier = 0.02f;
+        [Tooltip("Какой шанс уклонения (0-1) дает 1 единица IQ")]
+        [SerializeField] private float iqDodgeMultiplier = 0.01f;
+
+        [Header("Pattern Database")]
+        [SerializeField] private List<StickerPattern> patternDatabase;
+
         private bool isRaceActive = false;
         private List<Cockroach> allRacers = new List<Cockroach>();
-        private Dictionary<Cockroach, int> racerLaps = new Dictionary<Cockroach, int>();
-        private Dictionary<Cockroach, float> lastProgress = new Dictionary<Cockroach, float>();
         private float stickerSpawnTimer;
 
         public bool IsRaceActive => isRaceActive;
@@ -44,19 +57,25 @@ namespace Game.Race
             if (player != null) allRacers.Add(player);
             if (enemies != null) allRacers.AddRange(enemies);
 
-            racerLaps.Clear();
-            lastProgress.Clear();
-            stickerSpawnTimer = stickerSpawnInterval;
+            stickerSpawnTimer = 0.5f;
 
             foreach (var racer in allRacers)
             {
                 if (racer == null) continue;
 
-                racerLaps[racer] = 0;
-                lastProgress[racer] = 0f;
                 racer.isRacing = true;
             }
 
+            if (VoiceManager.Instance != null)
+            {
+                VoiceManager.Instance.ResetRaceCounters();
+            }
+
+            if (MusicManager.Instance != null)
+            {
+                MusicManager.Instance.StartRaceMusic();
+            }
+            
             isRaceActive = true;
             Debug.Log("RaceManager: Все участники готовы. Старт!");
         }
@@ -76,66 +95,47 @@ namespace Game.Race
 
         private void CheckLaps(Cockroach racer)
         {
-            float currentProgress = racer.GetProgress();
-            if (lastProgress[racer] > 0.8f && currentProgress < 0.2f)
+            if (racer.currentLap >= lapsToWin)
             {
-                racerLaps[racer]++;
-                if (racerLaps[racer] >= lapsToWin) EndRace(racer);
+                EndRace(racer);
             }
-            lastProgress[racer] = currentProgress;
-        }
-    
-    private void EndRace(Cockroach winner)
-    {
-        isRaceActive = false;
-
-        // Останавливаем движение всех участников
-        foreach (var r in allRacers)
-        {
-            if (r != null) r.isRacing = false;
         }
 
-        Debug.Log($"ПОБЕДИТЕЛЬ: {winner.racerName}");
-
-        // 1. Сортируем всех гонщиков по хайпу
-        var sortedResults = allRacers
-            .OrderByDescending(r => r.GetHype())
-            .ToList();
-
-        if (sortedResults.Count >= 2)
+        private void EndRace(Cockroach winner)
         {
-            Cockroach firstPlace = sortedResults[0];
-            Cockroach secondPlace = sortedResults[1];
-            Debug.Log($"Первое место: {firstPlace.GetHype()} хайпа");
-            Debug.Log($"Второе место: {secondPlace.GetHype()} хайпа");
-            
-            // 2. Проверяем, является ли победитель игроком
-            if (firstPlace is PlayerCockroach && ProfileManager.Instance != null)
+            isRaceActive = false;
+
+            foreach (var r in allRacers)
             {
-                // 3. Рассчитываем награду: Хайп 1-го места минус Хайп 2-го места
-                int hypeReward = firstPlace.GetHype() - secondPlace.GetHype();
+                if (r != null) r.isRacing = false;
+            }
 
-                // Если разница положительная, прибавляем к ресурсам
-                if (hypeReward > 0)
+            var sortedResults = allRacers.OrderByDescending(r => r.GetHype()).ToList();
+
+            if (sortedResults.Count >= 2)
+            {
+                Cockroach firstPlace = sortedResults[0];
+                Cockroach secondPlace = sortedResults[1];
+
+                if (firstPlace is PlayerCockroach && ProfileManager.Instance != null)
                 {
+                    int hypeReward = firstPlace.GetHype() - secondPlace.GetHype();
                     ProfileManager.Instance.profile.currentResources += hypeReward;
-                    Debug.Log($"RaceManager: Игрок победил! Начислено ресурсов: {hypeReward}");
+                    ProfileManager.Instance.profile.result = hypeReward;
+                } else
+                {
+                    ProfileManager.Instance.profile.result = -1; // Lose
                 }
             }
+
+            if (MusicManager.Instance != null)
+                MusicManager.Instance.LowerMusicAtEnd();
+
+            if (RewardUI.Instance != null)
+                RewardUI.Instance.GenerateRewardUI(allRacers);
         }
 
-        // ВЫЗОВ ОКНА НАГРАДЫ
-        if (RewardUI.Instance != null)
-        {
-            RewardUI.Instance.GenerateRewardUI(allRacers);
-        }
-        else
-        {
-            Debug.LogWarning("RaceManager: RewardUI не найден на сцене!");
-        }
-    }
-
-    public bool CanPlayCard(int handIndex)
+        public bool CanPlayCard(int handIndex)
         {
             if (handIndex < 0 || handIndex >= currentHand.Length) return false;
             CardData card = currentHand[handIndex];
@@ -151,28 +151,189 @@ namespace Game.Race
             return true;
         }
 
-        private void HandleStickerSpawning()
+        #region Sticker Spawning & Logic
+        
+        private void ExecutePattern(StickerPattern pattern, float baseProg)
         {
-            if (hypeStickerPrefab == null) return;
-            stickerSpawnTimer -= Time.fixedDeltaTime;
-            if (stickerSpawnTimer <= 0)
+            foreach (var stickerData in pattern.stickers)
             {
-                stickerSpawnTimer = stickerSpawnInterval;
-                SpawnStickerOnSpline();
+                // Вычисляем финальный прогресс для каждого стикера в паттерне
+                float finalProg = (baseProg + stickerData.progressOffset) % 1f;
+
+                SpawnSticker(
+                    stickerData.startLane,
+                    finalProg,
+                    stickerData.type,
+                    stickerData.movement
+                );
             }
         }
 
-        private void SpawnStickerOnSpline()
+        private void HandleStickerSpawning()
         {
-            if (allRacers.Count == 0) return;
-            var leader = allRacers.OrderByDescending(r => racerLaps[r] + r.GetProgress()).First();
-            float spawnProg = (leader.GetProgress() + spawnProgressAhead) % 1f;
-            Vector3 spawnPos = Race.GetRandomLane().EvaluatePosition(spawnProg);
-            GameObject go = Instantiate(hypeStickerPrefab, spawnPos, Quaternion.identity, transform);
-            if (go.TryGetComponent(out StickerView view))
+            if (hypeStickerPrefab == null || allRacers.Count < 2 || patternDatabase.Count == 0) return;
+
+            stickerSpawnTimer -= Time.fixedDeltaTime;
+            if (stickerSpawnTimer <= 0)
             {
-                view.Setup(UnityEngine.Random.value < 0.4f ? StickerType.Sabotage : StickerType.Hype);
+                // 1. Ищем таракана на втором месте
+                var sortedRacers = allRacers.OrderByDescending(r => r.currentLap + r.GetProgress()).ToList();
+                Cockroach secondPlaceRacer = sortedRacers[1];
+
+                // 2. Высчитываем базовую точку спавна
+                float baseProg = (secondPlaceRacer.GetProgress() + spawnProgressAhead) % 1f;
+
+                // 3. Выбираем случайный паттерн из базы
+                int randomIndex = Random.Range(0, patternDatabase.Count);
+                StickerPattern selectedPattern = patternDatabase[randomIndex];
+
+                // 4. Спавним паттерн
+                ExecutePattern(selectedPattern, baseProg);
+
+                // Сброс таймера
+                stickerSpawnTimer = stickerSpawnInterval;
             }
         }
+
+        private void SpawnSticker(int laneIndex, float progress, StickerType type, StickerMovementData movement)
+        {
+            // Начальная позиция нужна только для Instantiate
+            Vector3 startPos = Race.GetLane(laneIndex).EvaluatePosition(progress);
+
+            GameObject go = Instantiate(hypeStickerPrefab, startPos, Quaternion.identity, transform);
+            if (go.TryGetComponent(out StickerView view))
+            {
+                view.Setup(type, laneIndex, progress, movement);
+            }
+        }
+
+        private struct CocroachStats
+        {
+            public bool isPlayer;
+            public int iq;
+            public int charisma;
+            public Vector3 spawnPos;
+        }
+
+        private CocroachStats GetCockroachStats(Cockroach racer)
+        {
+            bool isPlayer = racer is PlayerCockroach;
+            int iq = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.baseIQ : 0;
+            int charisma = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.baseCharisma : 0;
+            Vector3 spawnPos = racer.transform.position;
+
+            return new CocroachStats
+            {
+                isPlayer = isPlayer,
+                iq = iq,
+                charisma = charisma,
+                spawnPos = spawnPos
+            };
+        }
+
+        public void OnStickerCollected(StickerView sticker, Cockroach racer)
+        {
+            if (!isRaceActive) return;
+
+            bool isPlayer = racer is PlayerCockroach;
+            bool effectApplied = true;
+
+            // Ссылки для сокращения кода
+            int iq = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.baseIQ : 0;
+            int charisma = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.baseCharisma : 0;
+            Vector3 spawnPos = racer.transform.position;
+
+            if (sticker.CurrentType == StickerType.Hype)
+            {
+                ApplyHypeSticker(racer);
+            }
+            else if (sticker.CurrentType == StickerType.Sabotage)
+            {
+                effectApplied = ApplySabotageSticker(racer);
+            }
+            else if (sticker.CurrentType == StickerType.Arrow)
+            {
+                ApplyArrowSticker(racer, sticker.CurrentDirection);
+            }
+
+            if (VoiceManager.Instance != null)
+            {
+                VoiceManager.Instance.OnCollectedSticker(sticker.CurrentType, effectApplied);
+            }
+
+            sticker.Consume();
+        }
+
+        private void ApplyHypeSticker(Cockroach racer)
+        {
+            var stats = GetCockroachStats(racer);
+            float bonus = hypeAmount * (stats.charisma * charismaMultiplier);
+            int finalHype = hypeAmount + Mathf.RoundToInt(bonus);
+
+            racer.AddHype(finalHype);
+
+            // --- ВИЗУАЛ ХАЙПА ---
+            UIManager.Instance.SpawnFloatingText(stats.spawnPos, $"+{finalHype} HYPE", Color.yellow);
+        }
+
+        private bool ApplySabotageSticker(Cockroach racer)
+        {
+            var stats = GetCockroachStats(racer);
+            if (!racer.IsInvulnerable())
+            {
+                float dodgeChance = stats.iq * iqDodgeMultiplier;
+
+                if (stats.isPlayer && Random.value < dodgeChance)
+                {
+                    Debug.Log("<color=cyan>IQ СРАБОТАЛ!</color>");
+
+                    // --- ВИЗУАЛ УКЛОНЕНИЯ ---
+                    UIManager.Instance.SpawnFloatingText(stats.spawnPos, "DODGE!", Color.cyan);
+                    return false;
+                }
+                else
+                {
+                    racer.AddHype(sabotagePenalty);
+                    racer.BumpBack(sabotageBumpForce);
+
+                    // --- ВИЗУАЛ ШТРАФА ---
+                    UIManager.Instance.SpawnFloatingText(stats.spawnPos, $"{sabotagePenalty} HYPE", Color.red);
+                    return true;
+                }
+            }
+            else
+            {
+                UIManager.Instance.SpawnFloatingText(stats.spawnPos, "SHIELD!", Color.white);
+                return false;
+            }
+        }
+
+        private void ApplyArrowSticker(Cockroach racer, ArrowDirection direction)
+        {
+            if (direction == ArrowDirection.Forward)
+            {
+                var boost = new Effects.SpeedBoostModifier(1f);
+                boost.Initialize(racer, 0.8f);
+                racer.AddEffect(boost);
+
+                UIManager.Instance.SpawnFloatingText(racer.transform.position, "BOOST!", Color.yellow);
+            }
+            else if (direction == ArrowDirection.Back)
+            {
+                var reverse = new Effects.ReverseModifier();
+                reverse.Initialize(racer, 1.5f);
+                racer.AddEffect(reverse);
+                UIManager.Instance.SpawnFloatingText(racer.transform.position, "REVERSE!", Color.magenta);
+            }
+            else
+            {
+                int offset = (direction == ArrowDirection.Right) ? 1 : -1;
+                int targetLane = Mathf.Clamp(racer.currentLane + offset, 0, 2);
+
+                racer.ChangeLane(targetLane);
+                UIManager.Instance.SpawnFloatingText(racer.transform.position, "SWITCH!", Color.cyan);
+            }
+        }
+        #endregion
     }
 }

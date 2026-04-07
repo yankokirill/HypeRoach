@@ -1,3 +1,4 @@
+using Game.Core;
 using UnityEngine;
 
 namespace Game.Race.Effects
@@ -15,18 +16,24 @@ namespace Game.Race.Effects
 
             float pProg = player.GetProgress();
             int pLane = player.currentLane;
+            int pLap = player.currentLap;
 
             float tProg = target.GetProgress();
             int tLane = target.currentLane;
+            int tLap = target.currentLap;
 
-            player.SetProgress(tProg);
-            target.SetProgress(pProg);
+            player.SetProgressAndLap(tProg, tLap);
+            target.SetProgressAndLap(pProg, pLap);
 
             player.TeleportToLane(tLane);
             target.TeleportToLane(pLane);
 
             target.LockLaneChanging(1.5f);
 
+            if (VoiceManager.Instance != null)
+            {
+                VoiceManager.Instance.PlayTeleportVoice(pLane != tLane);
+            }
             Debug.Log($"Мгновенная рокировка: {player.racerName} и {target.racerName}");
         }
 

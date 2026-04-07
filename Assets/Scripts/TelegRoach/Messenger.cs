@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using Game.Base;
+using Game.Core;
 
 public class Messenger : MonoBehaviour
 {
@@ -69,14 +70,19 @@ public class Messenger : MonoBehaviour
     private CharacterProfile[] _profiles;
     private bool wasOpened = false;
 
+    private Coroutine _dialogueCoroutine;
+    private DialogueData _currentDialogueData;
+    private int _currentMessageIndex = 0;
+    private bool _isDialogueActive = false;
+
     private void Awake()
     {
         _profiles = new CharacterProfile[]
         {
-            new CharacterProfile { displayName = "The Don",    avatarColor = Theme.HexColor("E57373"), nameColor = Theme.HexColor("C0392B") },
-            new CharacterProfile { displayName = "The Dealer", avatarColor = Theme.HexColor("66BB6A"), nameColor = Theme.HexColor("1E7E34") },
-            new CharacterProfile { displayName = "...",        avatarColor = Theme.HexColor("90A4AE"), nameColor = Theme.HexColor("546E7A") },
-            new CharacterProfile { displayName = "You",        avatarColor = Theme.HexColor("4A9EF5"), nameColor = Color.clear },
+            new CharacterProfile { displayName = "Босс",    avatarColor = Theme.HexColor("E57373"), nameColor = Theme.HexColor("C0392B") },
+            new CharacterProfile { displayName = "Химик", avatarColor = Theme.HexColor("66BB6A"), nameColor = Theme.HexColor("1E7E34") },
+            new CharacterProfile { displayName = "Молчун",        avatarColor = Theme.HexColor("90A4AE"), nameColor = Theme.HexColor("546E7A") },
+            new CharacterProfile { displayName = "Вы",        avatarColor = Theme.HexColor("4A9EF5"), nameColor = Color.clear },
         };
 
         if (Instance == null) Instance = this;
@@ -574,20 +580,63 @@ public class Messenger : MonoBehaviour
     public void PlayDialogue(DialogueData data)
     {
         if (data == null) return;
-        StartCoroutine(ProcessDialogueQueue(data));
+
+        // Если уже идет какой-то диалог, останавливаем его перед новым
+        if (_dialogueCoroutine != null) StopCoroutine(_dialogueCoroutine);
+
+        _currentDialogueData = data;
+        _currentMessageIndex = 0;
+        _isDialogueActive = true;
+
+        _dialogueCoroutine = StartCoroutine(ProcessDialogueQueue(data));
     }
 
     private IEnumerator ProcessDialogueQueue(DialogueData data)
     {
-        foreach (var entry in data.messages)
+        for (_currentMessageIndex = 0; _currentMessageIndex < data.messages.Count; _currentMessageIndex++)
         {
+            var entry = data.messages[_currentMessageIndex];
             SendMessageNow(entry.sender, entry.text);
 
             float waitTime = entry.delayAfter > 0 ? entry.delayAfter : 3.0f;
             yield return new WaitForSeconds(waitTime);
         }
 
+        FinishDialogue();
+    }
+
+    // Вынесли завершение в отдельный метод, чтобы вызывать его и при скипе
+    private void FinishDialogue()
+    {
+        _isDialogueActive = false;
+        _dialogueCoroutine = null;
+
         SpawnFileBubble(Sender.Boss, "daily_reward.zip", "1.4kb", RoundManager.Instance.ClaimBonusDraft);
+    }
+
+    public void SkipDialogue()
+    {
+        // Если диалог не идет, ничего не делаем
+        if (!_isDialogueActive || _currentDialogueData == null) return;
+
+        // 1. Останавливаем корутину, чтобы она не спавнила сообщения по таймеру
+        if (_dialogueCoroutine != null)
+        {
+            StopCoroutine(_dialogueCoroutine);
+            _dialogueCoroutine = null;
+        }
+
+        // 2. Доспавниваем все сообщения, которые игрок еще не увидел
+        for (int i = _currentMessageIndex + 1; i < _currentDialogueData.messages.Count; i++)
+        {
+            var entry = _currentDialogueData.messages[i];
+            SendMessageNow(entry.sender, entry.text);
+        }
+
+        // 3. Вызываем финал (файл награды)
+        FinishDialogue();
+
+        Debug.Log("Диалог пропущен");
     }
 
     public void CloseMessenger()
@@ -601,7 +650,8 @@ public class Messenger : MonoBehaviour
 
         if (!wasOpened)
         {
-            DialogueManager.Instance.PlayNext();
+            int result = ProfileManager.Instance.profile.result;
+            DialogueManager.Instance.PlayNext(result);
             wasOpened = true;
         }
     }

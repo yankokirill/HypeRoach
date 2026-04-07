@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Game.Race
 {
@@ -15,6 +16,7 @@ namespace Game.Race
 
         [Header("State")]
         public bool isRacing = false;
+        public int moveDirection = 1;
 
         [Header("Hype Settings")]
         protected int hypeAmount = 0;
@@ -27,6 +29,8 @@ namespace Game.Race
         protected Rigidbody2D rb;
         private Stack<int> laneHistory = new Stack<int>();
         private List<StatusEffect> activeEffects = new List<StatusEffect>();
+
+        public int currentLap { get; private set; } = 0;
 
         protected virtual void Awake()
         {
@@ -65,41 +69,57 @@ namespace Game.Race
 
             UpdateEffects();
 
-            // 1. Считаем скорость
             float speed = GetCurrentSpeed();
-
-            // Получаем длину текущего сплайна, чтобы скорость была честной (метры в секунду)
             float currentSplineLength = Race.GetLane(currentLane).CalculateLength();
 
-            // Увеличиваем прогресс (0..1)
-            progress += (speed / currentSplineLength) * Time.fixedDeltaTime;
-            progress %= 1f; // Зацикливаем
+            // 1. Вычисляем дельту (смещение) за этот кадр
+            float deltaProgress = (speed / currentSplineLength) * Time.fixedDeltaTime * moveDirection;
+            progress += deltaProgress;
 
-            // 2. Рассчитываем позицию на текущем сплайне
+            // 2. Считаем круги при переходе через 0/1
+            if (progress >= 1f)
+            {
+                progress -= 1f;
+                currentLap++; // Проехали вперед
+            }
+            else if (progress < 0f)
+            {
+                progress += 1f;
+                currentLap--; // Проехали задом наперед
+            }
+
             Vector3 targetSplinePos = (Vector3)Race.GetLane(currentLane).EvaluatePosition(progress);
-            Quaternion targetSplineRot = Quaternion.LookRotation(Race.GetLane(currentLane).EvaluateTangent(progress), Vector3.forward);
 
-            // 3. Плавный переход между старой и новой линией
+            // Если едем назад, разворачиваем вектор взгляда таракана на 180
+            Vector3 tangent = Race.GetLane(currentLane).EvaluateTangent(progress);
+            if (moveDirection == -1) tangent = -tangent;
+
+            Quaternion targetSplineRot = Quaternion.LookRotation(tangent, Vector3.forward);
+
             if (lastLane != currentLane)
             {
                 visualLaneAlpha = Mathf.MoveTowards(visualLaneAlpha, 1f, laneChangeSpeed * Time.fixedDeltaTime);
             }
 
             Vector3 startSplinePos = (Vector3)Race.GetLane(lastLane).EvaluatePosition(progress);
-
-            // Итоговая позиция — это Lerp между двумя сплайнами на одном и том же прогрессе
             Vector3 finalPos = Vector3.Lerp(startSplinePos, targetSplinePos, visualLaneAlpha);
 
-            // 4. Поворот (смотрим по касательной сплайна)
-            // Мы тоже интерполируем поворот для плавности
-            Quaternion startSplineRot = Quaternion.LookRotation(Race.GetLane(lastLane).EvaluateTangent(progress), Vector3.forward);
+            Vector3 startTangent = Race.GetLane(lastLane).EvaluateTangent(progress);
+            if (moveDirection == -1) startTangent = -startTangent;
+
+            Quaternion startSplineRot = Quaternion.LookRotation(startTangent, Vector3.forward);
             Quaternion finalRot = Quaternion.Slerp(startSplineRot, targetSplineRot, visualLaneAlpha);
 
             rb.MovePosition(finalPos);
-            rb.MoveRotation(finalRot.eulerAngles.z - 90); // -90 если спрайт смотрит вправо
+            rb.MoveRotation(finalRot.eulerAngles.z - 90);
 
-            // Если переход закончен, фиксируем линию
             if (visualLaneAlpha >= 1f) lastLane = currentLane;
+        }
+
+        // Метод для разворота
+        public void ReverseDirection()
+        {
+            moveDirection *= -1;
         }
 
         public void ChangeLane(int nextLane)
@@ -144,7 +164,11 @@ namespace Game.Race
         public void BumpBack(float force) => bounceVelocity = -force;
         public void ResetBounce() => bounceVelocity = 0f;
         public float GetProgress() => progress;
-        public void SetProgress(float p) => progress = p % 1f;
+        public void SetProgressAndLap(float newProgress, int newLap)
+        {
+            progress = newProgress % 1f;
+            currentLap = newLap;
+        }
 
         public abstract void UpdateState();
 

@@ -30,9 +30,20 @@ namespace Game.Base
         private List<CardData> deck = new List<CardData>();
         private GridSlot selectedSlot;
 
-        private void Awake() => Instance = this;
+        private void Awake()
+        {
+            if (Instance == null) Instance = this;
+            else Destroy(gameObject);
+        }
 
-        private void Start() => Initialize();
+        private void Start()
+        {
+            Initialize();
+            if (MusicManager.Instance != null)
+            {
+                MusicManager.Instance.StartBaseMusic();
+            }
+        }
 
         private void Initialize()
         {
