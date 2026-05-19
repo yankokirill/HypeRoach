@@ -10,7 +10,7 @@ namespace Game.Race
         public CardView[] handCardViews;
 
         // Оставили 4 хоткея
-        readonly KeyCode[] hotKeys = new KeyCode[] { KeyCode.Q, KeyCode.W, KeyCode.E, KeyCode.R };
+        readonly KeyCode[] hotKeys = new KeyCode[] { KeyCode.Q, KeyCode.W };
 
         void Awake()
         {

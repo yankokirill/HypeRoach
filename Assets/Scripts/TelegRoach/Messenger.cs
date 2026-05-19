@@ -605,15 +605,6 @@ public class Messenger : MonoBehaviour
         FinishDialogue();
     }
 
-    // Вынесли завершение в отдельный метод, чтобы вызывать его и при скипе
-    private void FinishDialogue()
-    {
-        _isDialogueActive = false;
-        _dialogueCoroutine = null;
-
-        SpawnFileBubble(Sender.Boss, "daily_reward.zip", "1.4kb", RoundManager.Instance.ClaimBonusDraft);
-    }
-
     public void SkipDialogue()
     {
         // Если диалог не идет, ничего не делаем
@@ -650,9 +641,49 @@ public class Messenger : MonoBehaviour
 
         if (!wasOpened)
         {
-            int result = ProfileManager.Instance.profile.result;
-            DialogueManager.Instance.PlayNext(result);
             wasOpened = true;
+
+            var profile = ProfileManager.Instance?.profile;
+            if (profile == null) return;
+
+            // Первый запуск — стартовый диалог, независимо от результата
+            if (!profile.startingDialoguePlayed)
+            {
+                profile.startingDialoguePlayed = true;
+                DialogueManager.Instance.PlayNext(0); // PlayNext сам проверит startingDialogue
+                return;
+            }
+
+            // Медиа-гонка — каждые 5 дней (dayCount кратен 5 после инкремента в RoundManager)
+            bool isMediaRace = profile.dayCount % 5 == 0;
+            bool isVictory = profile.lastRunResult == RunResult.Victory;
+
+            if (isMediaRace)
+            {
+                // Полный диалог — запускаем через DialogueManager
+                DialogueManager.Instance.PlayNext(profile.result);
+            }
+            else if (isVictory)
+            {
+                // Обычная победа — босс молча шлёт награду
+                SpawnFileBubble(Sender.Boss, "daily_reward.zip", "1.4kb",
+                    RoundManager.Instance.ClaimBonusDraft);
+            }
+            else
+            {
+                // Обычное поражение — босс пишет одну фразу
+                SendMessageNow(Sender.Boss, "Старайся.");
+            }
         }
+    }
+
+    // Вызывается только после полного диалога (медиа-гонка)
+    private void FinishDialogue()
+    {
+        _isDialogueActive = false;
+        _dialogueCoroutine = null;
+
+        SpawnFileBubble(Sender.Boss, "daily_reward.zip", "1.4kb",
+            RoundManager.Instance.ClaimBonusDraft);
     }
 }

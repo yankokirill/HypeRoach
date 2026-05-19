@@ -21,7 +21,7 @@ namespace Game.Base
 
         public bool IsEmpty => placedCard == null;
 
-        public Transform CardHolder { get; private set; }
+        public Transform CardHolder => cardHolder;
 
         private void Awake()
         {
@@ -29,90 +29,123 @@ namespace Game.Base
             slotButton.onClick.AddListener(OnSlotClicked);
         }
 
-        // Standard Unity Drop Event
         public void OnDrop(PointerEventData eventData)
         {
-            CardView draggedCard = eventData.pointerDrag.GetComponent<CardView>();
-            if (draggedCard == null) return;
+            CardView dragged = eventData.pointerDrag?.GetComponentInParent<CardView>();
+            if (dragged == null) return;
 
-            // СЦЕНАРИЙ 1: Карта пришла ИЗ РУКИ
-            if (draggedCard.currentHand != null)
+            // ── Карта из руки ─────────────────────────────────────────────────────
+            if (dragged.currentHand != null)
             {
-                if (IsEmpty)
+                HandCardData handData = dragged.handData;
+                if (handData == null) return;
+
+                if (handData.type == CardType.Building)
                 {
-                    PlaceCard(draggedCard);
-                    GameManager.Instance.OnCardPlaced(draggedCard, this);
+                    if (!IsEmpty)
+                    {
+                        Debug.Log("Building можно класть только на пустой слот.");
+                        return;
+                    }
+
+                    // ИСПРАВЛЕНИЕ БАГА: Сначала извлекаем карту из руки (удаляем из списка)
+                    // Делаем это ДО PlaceCard, иначе currentHand станет null!
+                    Hand previousHand = dragged.currentHand;
+                    previousHand.RemoveCard(dragged);
+
+                    PlaceCard(dragged, FieldCard.FromHand(handData));
+
+                    // ИСПРАВЛЕНИЕ NRE: Безопасное обращение к GameManager
+                    if (GameManager.Instance != null)
+                    {
+                        // Если OnCardPlaced — это метод, то оставляем так.
+                        // Если это Action/delegate, замените строку ниже на: GameManager.Instance.OnCardPlaced?.Invoke(dragged, this);
+                        GameManager.Instance.OnCardPlaced(dragged, this);
+                    }
+                    else
+                    {
+                        Debug.LogError("GameManager.Instance равен null! Убедитесь, что GameManager инициализирован на сцене.");
+                    }
                 }
-                else
+                else // Upgrade
                 {
-                    Debug.Log("Нельзя ставить карту из руки на занятую клетку!");
+                    if (IsEmpty)
+                    {
+                        Debug.Log("Upgrade можно применять только к зданиям.");
+                        return;
+                    }
+                    if (GetCard().fieldData.TryApplyUpgrade(handData))
+                    {
+                        dragged.currentHand.RemoveCard(dragged);
+                        Object.Destroy(dragged.gameObject);
+                        GetCard().Refresh();
+
+                        if (GameManager.Instance != null)
+                            GameManager.Instance.NotifyStatsChanged();
+                    }
                 }
+                return;
             }
-            // СЦЕНАРИЙ 2: Карта пришла С ДРУГОЙ КЛЕТКИ ПОЛЯ
-            else if (draggedCard.currentSlot != null)
+
+            // ── Building с другого слота ──────────────────────────────────────────
+            if (dragged.currentSlot != null)
             {
-                GridSlot sourceSlot = draggedCard.currentSlot;
-                if (sourceSlot == this)
-                {
-                    Debug.Log("Карта сброшена в тот же слот. Возвращаем на место.");
-                    return;
-                }
+                GridSlot sourceSlot = dragged.currentSlot;
+                if (sourceSlot == this) return;
 
                 if (IsEmpty)
                 {
+                    PlaceCard(dragged, dragged.fieldData);
                     sourceSlot.RemoveCard();
-                    PlaceCard(draggedCard);
-                }
-                // Если навели на другую карту
-                else if (TryMerge(placedCard, draggedCard))
-                {
-                    sourceSlot.RemoveCard();
-                    Destroy(draggedCard.gameObject);
+
+                    if (GameManager.Instance != null)
+                        GameManager.Instance.NotifyStatsChanged();
                 }
                 else
                 {
-                    // Это сработает, если уровни или ID разные
-                    Debug.Log("Слияние отменено: не совпадают уровни или ID. Карта возвращается назад.");
+                    if (!TryMerge(GetCard(), dragged, sourceSlot))
+                    {
+                        Debug.Log("Слияние невозможно: уровни не совпадают или карта прокачана.");
+                    }
                 }
             }
         }
 
-        private bool TryMerge(CardView baseCard, CardView dragCard)
+        private bool TryMerge(CardView baseView, CardView dragView, GridSlot sourceSlot)
         {
-            CardData baseData = baseCard.cardData;
-            CardData dragData = dragCard.cardData;
+            if (!baseView.fieldData.TryMerge(dragView.fieldData)) return false;
 
-            // Правила: Одинаковый ID + Одинаковый Уровень + Не Макс Уровень
-            if (baseData.cardID == dragData.cardID &&
-                baseData.level == dragData.level &&
-                baseData.level < baseData.maxLevel)
-            {
-                baseData.level++; // Повышаем уровень карты на столе
-                baseCard.Refresh(baseData.level); // Обновляем текст и картинку
-                GameManager.Instance.NotifyStatsChanged(); // Пересчитываем общие статы колонии
-                return true;
-            }
-            return false;
+            sourceSlot.RemoveCard();
+            Object.Destroy(dragView.gameObject);
+
+            baseView.Refresh();
+
+            if (GameManager.Instance != null)
+                GameManager.Instance.NotifyStatsChanged();
+
+            return true;
         }
 
-        public void PlaceCard(CardView card)
+        public void PlaceCard(CardView card, FieldCard fc)
         {
-            // ИСПРАВЛЕНО: Раньше было просто if (!IsEmpty) return;
-            // Теперь: если слот не пустой, но в нем лежит ЭТА ЖЕ карта — мы разрешаем ей встать на место!
-            if (!IsEmpty && placedCard != card) return;
+            if (!IsEmpty && placedCard != card)
+            {
+                Debug.LogWarning($"GridSlot ({gridX},{gridY}) уже занят другой картой — PlaceCard отклонён.");
+                return;
+            }
+
+            card.InitAsFieldCard(fc);
 
             placedCard = card;
-            card.SetSlot(this);
+            card.SetSlot(this); // Здесь card.currentHand становится null
             card.transform.SetParent(cardHolder, false);
-            RectTransform rt = card.GetComponent<RectTransform>();
 
+            RectTransform rt = card.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = Vector2.zero;
             card.transform.localScale = Vector3.one;
-
-            card.SetVisualMode(true);
         }
 
         public void RemoveCard()
@@ -124,7 +157,8 @@ namespace Game.Base
 
         private void OnSlotClicked()
         {
-            GameManager.Instance.OnSlotClicked(this);
+            if (GameManager.Instance != null)
+                GameManager.Instance.OnSlotClicked(this);
         }
     }
 }

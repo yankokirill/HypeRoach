@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Game.Base
 {
@@ -18,63 +18,37 @@ namespace Game.Base
 
         private void Start()
         {
-            if (draftPanel != null)
-                draftPanel.SetActive(false);
+            if (draftPanel != null) draftPanel.SetActive(false);
         }
 
         public void StartDraft()
         {
-            if (database == null || database.allCards.Count == 0)
+            if (database == null || database.buildings.Count == 0)
             {
-                Debug.LogError("DraftManager: Database is missing or empty!");
+                Debug.LogError("DraftManager: база пустая!");
                 return;
             }
 
             draftPanel.SetActive(true);
 
-            // Очистка старых карт
             foreach (Transform child in draftCardsParent)
                 Destroy(child.gameObject);
 
-            // Создаем 3 карты для выбора
-            for (int i = 0; i < 3; i++)
-            {
-                CardData randomData = database.GetRandomCard();
-                if (randomData == null) continue;
+            HandCardData data = database.GetRandomBuilding();
 
-                // Клонируем данные, чтобы не менять оригинал в ассетах
-                CardData runtimeData = randomData.Clone();
+            CardView card = Instantiate(cardPrefab, draftCardsParent);
+            card.InitAsHandCard(data);
 
-                CardView newCard = Instantiate(cardPrefab, draftCardsParent);
-
-                // 1. Инициализируем данные
-                newCard.Initialize(runtimeData);
-
-                // 2. Устанавливаем увеличенный масштаб для карты из окна выбора
-                newCard.SetScale(1.5f);
-
-                // 3. Подписываемся на клик
-                newCard.OnCardClicked = (clickedCard) => OnCardSelected(runtimeData);
-            }
+            HandCardData captured = data;
+            card.OnCardClicked = _ => OnCardSelected(captured);
         }
 
-        private void OnCardSelected(CardData selectedData)
+        private void OnCardSelected(HandCardData data)
         {
             if (gameManager.playerHand.Count < gameManager.playerHand.maxHandSize)
-            {
-                Debug.Log($"Drafted: {selectedData.cardName}");
-
-                // Создаем карту для руки
-                CardView newHandCard = Instantiate(cardPrefab, gameManager.playerHand.handParent);
-                newHandCard.Initialize(selectedData);
-                newHandCard.SetScale(1.0f);
-
-                gameManager.playerHand.AddCard(newHandCard);
-            }
+                gameManager.SpawnHandCard(data);
             else
-            {
-                Debug.LogWarning("Hand is full! Card discarded.");
-            }
+                Debug.LogWarning("Рука полная, карта сброшена.");
 
             draftPanel.SetActive(false);
         }

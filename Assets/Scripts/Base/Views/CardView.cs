@@ -1,189 +1,256 @@
-﻿using System;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System;
 
 namespace Game.Base
 {
-    [RequireComponent(typeof(CanvasGroup))]
-    public class CardView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+    [RequireComponent(typeof(RectTransform), typeof(CanvasGroup))]
+    public class CardView : MonoBehaviour,
+        IBeginDragHandler, IDragHandler, IEndDragHandler,
+        IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
-        public CardData cardData;
+        [Header("Hand Mode")]
+        [SerializeField] private GameObject handCard;
+        [SerializeField] private Image handArt;
+        [SerializeField] private Image handBackground;
+        [SerializeField] private TMP_Text handName;
+        [SerializeField] private TMP_Text handDescription;
 
-        [Header("UI References")]
-        [SerializeField] private Text cardNameText;
-        [SerializeField] private Text descriptionText;
-        [SerializeField] private Text levelText;
-        [SerializeField] private Image descriptionPanel;
-        [SerializeField] private Image frameImage;
-        [SerializeField] private Image headerImage;
-        [SerializeField] private Image levelImage;
+        [Header("Field Mode")]
+        [SerializeField] private GameObject fieldCard;
+        [SerializeField] private Image fieldArt;
+        [SerializeField] private TMP_Text fieldLevel;
+        [SerializeField] private TMP_Text fieldCircles;
 
-        [Header("Animation Settings")]
-        public float hoverScale = 1.15f;
-        public float scaleTransitionSpeed = 15f;
-        public float moveTransitionSpeed = 15f;
+        public HandCardData handData { get; private set; }
+        public FieldCard fieldData { get; private set; }
 
-        private CanvasGroup canvasGroup;
-        private Transform originalParent;
-        public GridSlot currentSlot { get; set; }
+        public bool IsOnField => fieldData != null;
+
         public Hand currentHand { get; set; }
+        public GridSlot currentSlot { get; set; }
 
-        public bool isDragging { get; private set; }
-        private float targetScale = 1f;
-        private float defaultScale = 1f;
-        public Vector3 targetLocalPosition { get; set; }
         public Action<CardView> OnCardClicked;
+        public Vector3 targetLocalPosition;
+
+        private CanvasGroup _canvasGroup;
+        private RectTransform _rt;
+        private Transform _originalParent;
+        private Canvas _rootCanvas;
+        private Canvas RootCanvas
+        {
+            get
+            {
+                if (_rootCanvas == null)
+                    _rootCanvas = GetComponentInParent<Canvas>();
+                return _rootCanvas;
+            }
+        }
+
+        private GridSlot _slotBeforeDrag;
+        private bool _isDragging;
+
+        // Целевой масштаб для плавного увеличения
+        private Vector3 _targetScale = Vector3.one;
 
         private void Awake()
         {
-            canvasGroup = GetComponent<CanvasGroup>();
-        }
-
-        private void OnDisable()
-        {
-            if (isDragging)
-            {
-                isDragging = false;
-                if (UIManager.Instance != null)
-                {
-                    UIManager.Instance.ShowDefaultHint();
-                }
-            }
+            _canvasGroup = GetComponent<CanvasGroup>();
+            _rt = GetComponent<RectTransform>();
         }
 
         private void Update()
         {
-            transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one * targetScale, Time.deltaTime * scaleTransitionSpeed);
+            // Плавно меняем масштаб каждый кадр (и при наведении, и при сбросе)
+            transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, Time.deltaTime * 15f);
 
-            if (!isDragging && currentSlot == null && currentHand != null)
-            {
-                transform.localPosition = Vector3.Lerp(transform.localPosition, targetLocalPosition, Time.deltaTime * moveTransitionSpeed);
-                transform.localRotation = Quaternion.Lerp(transform.localRotation, Quaternion.identity, Time.deltaTime * moveTransitionSpeed);
-            }
+            if (_isDragging) return;
+            if (currentSlot != null || currentHand == null) return;
+
+            transform.localPosition = Vector3.Lerp(
+                transform.localPosition, targetLocalPosition, Time.deltaTime * 12f);
         }
 
-        public void Initialize(CardData data)
-        {
-            cardData = data;
-            Refresh(data.level);
-            SetVisualMode(false);
-        }
-
-        public void Refresh(int level)
-        {
-            if (cardData == null) return;
-            if (cardNameText != null) cardNameText.text = cardData.cardName;
-            if (frameImage != null) frameImage.sprite = cardData.art;
-            if (descriptionText != null) descriptionText.text = cardData.CurrentEffectText;
-            if (levelText != null) levelText.text = level.ToString();
-        }
-
-        public void SetSlot(GridSlot slot) => currentSlot = slot;
+        // ─── Hover (Наведение курсора) ────────────────────────────────────────
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (currentSlot != null || isDragging) return;
-            targetScale = hoverScale * defaultScale;
-            if (currentHand != null) transform.SetAsLastSibling();
+            if (_isDragging) return;
+
+            // Устанавливаем целевой масштаб в 1.15
+            _targetScale = new Vector3(1.15f, 1.15f, 1.15f);
+
+            // Если карта в руке, поднимаем её поверх всех остальных карт
+            if (currentHand != null && currentSlot == null)
+            {
+                transform.SetAsLastSibling();
+            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (currentSlot != null || isDragging) return;
-            targetScale = defaultScale;
-            if (currentHand != null) transform.SetSiblingIndex(currentHand.GetCardIndex(this));
+            if (_isDragging) return;
+
+            // Возвращаем масштаб к исходному
+            _targetScale = Vector3.one;
+
+            // Возвращаем правильный Z-порядок (перекрытия) в руке
+            if (currentHand != null && currentSlot == null)
+            {
+                currentHand.UpdateSiblingIndices();
+            }
         }
 
-        // --- ИСПРАВЛЕННЫЙ КЛИК ---
+        // ─── Click ─────────────────────────────────────────────────────────────
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (isDragging) return;
+            if (_isDragging) return;
 
-            // 1. Если карта на сетке — имитируем клик по слоту
             if (currentSlot != null)
             {
-                GameManager.Instance.OnSlotClicked(currentSlot);
+                GameManager.Instance?.OnSlotClicked(currentSlot);
                 return;
             }
 
-            // 2. Если карта в Драфте (нет ни руки, ни слота)
-            if (currentHand == null && currentSlot == null)
-            {
-                OnCardClicked?.Invoke(this);
-            }
+            OnCardClicked?.Invoke(this);
         }
 
-        public void OnBeginDrag(PointerEventData eventData)
+        // ─── Init ─────────────────────────────────────────────────────────────
+
+        public void InitAsHandCard(HandCardData data)
         {
-            isDragging = true;
-            targetScale = 1f;
-            originalParent = transform.parent;
-
-            if (currentSlot != null)
-                UIManager.Instance.ShowHint("Перетаскивание...", "Объедините со зданием того же уровня!");
-
-            Transform targetLayer = GameManager.Instance.dragLayer != null
-                ? GameManager.Instance.dragLayer
-                : GetComponentInParent<Canvas>().transform;
-
-            transform.SetParent(targetLayer);
-            canvasGroup.blocksRaycasts = false;
+            handData = data;
+            fieldData = null;
+            Refresh();
         }
 
-        public void OnDrag(PointerEventData eventData)
+        public void InitAsFieldCard(FieldCard fc)
         {
-            if (!isDragging) return;
-
-            transform.position = eventData.position;
-
-            // Пересчитываем порядок в руке, только если карта из руки
-            if (currentHand != null)
-            {
-                currentHand.UpdateCardOrder(this, eventData);
-            }
+            fieldData = fc;
+            handData = null;
+            Refresh();
         }
 
-        public void OnEndDrag(PointerEventData eventData)
+        // ─── Refresh ──────────────────────────────────────────────────────────
+
+        public void Refresh()
         {
-            isDragging = false;
-            canvasGroup.blocksRaycasts = true;
-
-            if (UIManager.Instance != null)
-                UIManager.Instance.ShowDefaultHint();
-
-            if (currentSlot != null)
-            {
-                currentSlot.PlaceCard(this);
-            }
-            else if (currentHand != null)
-            {
-                transform.SetParent(currentHand.handParent);
-                transform.SetSiblingIndex(currentHand.GetCardIndex(this));
-                SetVisualMode(false);
-            }
+            if (IsOnField)
+                ShowFieldMode();
+            else
+                ShowHandMode();
         }
 
-        public void SetVisualMode(bool isOnGrid)
+        private void ShowHandMode()
         {
-            if (cardNameText != null) cardNameText.gameObject.SetActive(!isOnGrid);
-            if (descriptionPanel != null) descriptionPanel.gameObject.SetActive(!isOnGrid);
-            if (headerImage != null) headerImage.gameObject.SetActive(!isOnGrid);
+            handCard.SetActive(true);
+            fieldCard.SetActive(false);
 
-            RectTransform rt = GetComponent<RectTransform>();
-            if (isOnGrid)
-            {
-                levelImage.gameObject.SetActive(true);
-                rt.sizeDelta = new Vector2(160, 160);
-                if (frameImage != null) frameImage.transform.localPosition = Vector3.zero;
-            }
+            handArt.sprite = handData.art;
+            handBackground.sprite = handData.background;
+            handName.text = handData.cardName;
+            handDescription.text = handData.description;
         }
 
-        public void SetScale(float scale)
+        private void ShowFieldMode()
         {
-            defaultScale = scale;
-            targetScale = scale;
-            transform.localScale = Vector3.one * scale;
+            handCard.SetActive(false);
+            fieldCard.SetActive(true);
+
+            fieldLevel.text = $"{fieldData.Level}";
+
+            if (fieldCircles != null)
+                fieldCircles.text = BuildCirclesString(
+                    fieldData.TotalGreen,
+                    fieldData.TotalWhite,
+                    fieldData.TotalYellow);
+        }
+
+        private string BuildCirclesString(int green, int white, int yellow)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+
+            if (green > 0)
+                parts.Add($"<color=#33CC33>●{green}</color>");
+            if (white > 0)
+                parts.Add($"<color=#CCCCCC>●{white}</color>");
+            if (yellow > 0)
+                parts.Add($"<color=#FFD700>●{yellow}</color>");
+
+            return string.Join(" ", parts);
+        }
+
+        // ─── Slot ─────────────────────────────────────────────────────────────
+
+        public void SetSlot(GridSlot slot)
+        {
+            currentSlot = slot;
+            currentHand = null;
+        }
+
+        // ─── Drag ─────────────────────────────────────────────────────────────
+
+        public void OnBeginDrag(PointerEventData e)
+        {
+            _isDragging = true;
+            _targetScale = Vector3.one; // Сбрасываем масштаб до обычного во время перетаскивания
+
+            currentHand?.BeginDrag(this);
+            _slotBeforeDrag = currentSlot;
+            _originalParent = transform.parent;
+
+            transform.SetAsLastSibling();
+
+            Canvas canvas = RootCanvas;
+            if (canvas == null) return;
+
+            transform.SetParent(canvas.transform, true);
+            transform.SetAsLastSibling();
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.alpha = 0.85f;
+        }
+
+        public void OnDrag(PointerEventData e)
+        {
+            Canvas canvas = RootCanvas;
+            if (canvas == null) return;
+
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvas.GetComponent<RectTransform>(),
+                e.position, e.pressEventCamera, out Vector2 pos);
+            _rt.localPosition = pos;
+
+            currentHand?.UpdateCardOrder(this, e);
+        }
+
+        public void OnEndDrag(PointerEventData e)
+        {
+            _isDragging = false;
+            _targetScale = Vector3.one; // Убеждаемся, что масштаб сброшен
+
+            _canvasGroup.blocksRaycasts = true;
+            _canvasGroup.alpha = 1f;
+
+            if (currentHand != null && currentSlot == null)
+            {
+                transform.SetParent(_originalParent, false);
+            }
+            else if (currentSlot != null && currentSlot == _slotBeforeDrag)
+            {
+                transform.SetParent(_originalParent, false);
+
+                RectTransform rt = GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = Vector2.zero;
+                // Scale плавно вернется в Update()
+            }
+
+            currentHand?.EndDrag();
+            _slotBeforeDrag = null;
         }
     }
 }

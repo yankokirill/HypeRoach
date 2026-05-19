@@ -14,17 +14,19 @@ namespace Game.Base
         [SerializeField] private StatsPanelView statsPanelView;
         [SerializeField] private InfoPanelView infoPanelView;
 
-        [Header("Resources")]
-        [SerializeField] private Text resourcesText;
+        [Header("Text")]
+        [SerializeField] private TextMeshProUGUI resourcesText;
+        [SerializeField] private TextMeshProUGUI dayText;
 
         [Header("Animation Settings")]
-        [SerializeField] private float animationTickDuration = 1.0f; // Общее время на "тиканье" одного стата
-        [SerializeField] private float pulseScale = 1.2f; // Насколько увеличится число
-        [SerializeField] private float panelPulseScale = 1.1f; // На сколько увеличится statsPanel
-        [SerializeField] private float delayBetweenStats = 0.3f; // Пауза между анимациями
+        [SerializeField] private float animationTickDuration = 1.0f;
+        [SerializeField] private float pulseScale = 1.2f;
+        [SerializeField] private float panelPulseScale = 1.1f;
         [SerializeField] private Color increaseColor = Color.green;
         [SerializeField] private Color decreaseColor = Color.red;
         [SerializeField] private Color defaultColor = Color.white;
+
+        private GridSlot _selectedSlot;
 
         private void Awake()
         {
@@ -34,18 +36,21 @@ namespace Game.Base
 
         private void Start()
         {
+            if (dayText != null && ProfileManager.Instance != null)
+            {
+                int currentDay = ProfileManager.Instance.profile.dayCount;
+                dayText.text = $"День: {currentDay}";
+            }
+
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.OnResourcesChanged += UpdateResourcesText;
                 GameManager.Instance.OnSlotSelected += OnSlotSelected;
                 GameManager.Instance.OnStatsChanged += RefreshStats;
-
                 UpdateResourcesText(GameManager.Instance.GetCurrentResources());
             }
 
-            if (infoPanelView != null)
-                infoPanelView.SetDefault();
-
+            infoPanelView?.SetDefault();
             RefreshStats();
         }
 
@@ -59,142 +64,141 @@ namespace Game.Base
             }
         }
 
+        // ─── Ресурсы ──────────────────────────────────────────────────────────
+
         private void UpdateResourcesText(int amount)
         {
             if (resourcesText != null)
-                resourcesText.text = $"Ресурсы: {amount}";
+                resourcesText.text = $"Рубли: {amount}";
         }
 
+        // ─── Слот / карта ──────────────────────────────────────────────────────
+
         private void OnSlotSelected(GridSlot slot)
+        {
+            _selectedSlot = slot;
+            RefreshSlotInfo(slot);
+        }
+
+        private void RefreshSlotInfo(GridSlot slot)
         {
             if (infoPanelView == null) return;
 
             if (slot == null || slot.IsEmpty || slot.GetCard() == null)
             {
                 ShowDefaultHint();
+                return;
             }
-            else
+
+            CardView card = slot.GetCard();
+            FieldCard fc = card.fieldData;
+            HandCardData src = fc.Source;
+
+            int lives = fc.Level >= 4 ? 2 : 1;
+            string body = $"Уровень: {fc.Level}\nЖизни: {lives}";
+            body += $"\nХайп: +{fc.TotalHype}% (+{ProfileManager.Instance.profile.dedInsideHypeBonus})\nУклонение: +{fc.TotalEvasion}%";
+
+            if (fc.Upgrades.Count > 0)
             {
-                CardView card = slot.GetCard();
-                CardData data = card.cardData;
-
-                // Формируем красивый текст: Лор (курсивом) + пустая строка + Эффект
-                string fullDescription = $"<i>{data.CurrentDescription}</i>\n\n{data.CurrentEffectText}";
-
-                ShowHint(data.cardName, fullDescription);
+                var grouped = new System.Collections.Generic.Dictionary<string, int>();
+                foreach (var u in fc.Upgrades)
+                {
+                    string name = UpgradeDisplayName(u);
+                    grouped.TryGetValue(name, out int count);
+                    grouped[name] = count + 1;
+                }
+                var parts = new System.Collections.Generic.List<string>();
+                foreach (var kv in grouped)
+                    parts.Add(kv.Value > 1 ? $"{kv.Key} x{kv.Value}" : kv.Key);
+                body += $"\nУлучшения: {string.Join(", ", parts)}";
             }
+
+            ShowHint(src.cardName, body);
         }
 
-        public void ShowDefaultHint()
-        {
-            infoPanelView.SetDefault();
-        }
+        // ─── Хинты ────────────────────────────────────────────────────────────
+
+        public void ShowDefaultHint() => infoPanelView?.SetDefault();
 
         public void ShowHint(string title, string description)
         {
-            infoPanelView.SetTitle(title);
-            infoPanelView.SetDescription(description);
+            infoPanelView?.SetTitle(title);
+            infoPanelView?.SetDescription(description);
         }
 
-        public IEnumerator AnimateStatsRefresh(int newPopulation, int newIQ, int newCharisma)
+        // ─── Статы ────────────────────────────────────────────────────────────
+
+        public void RefreshStats()
         {
-            if (statsPanelView == null || ProfileManager.Instance == null) yield break;
+            if (statsPanelView == null || ProfileManager.Instance == null) return;
+            statsPanelView.SetStats(ProfileManager.Instance.profile.totalPopulation);
 
-            // 1. Увеличиваем всю панель статов
-            yield return StartCoroutine(AnimatePanelScale(statsPanelView.transform, panelPulseScale, 0.3f));
-
-            // 2. Получаем старые значения
-            int.TryParse(statsPanelView.populationText.text.Split('/')[0].Trim().Replace(",", ""), out int oldPopulation);
-            int.TryParse(statsPanelView.championIQText.text, out int oldIQ);
-            int.TryParse(statsPanelView.championCharismaText.text, out int oldCharisma);
-
-            // 3. Запускаем анимации характеристик последовательно
-            yield return StartCoroutine(AnimateSingleStat(statsPanelView.populationText, oldPopulation, newPopulation, true));
-            yield return new WaitForSeconds(delayBetweenStats);
-
-            yield return StartCoroutine(AnimateSingleStat(statsPanelView.championCharismaText, oldCharisma, newCharisma));
-            yield return new WaitForSeconds(delayBetweenStats);
-
-            yield return StartCoroutine(AnimateSingleStat(statsPanelView.championIQText, oldIQ, newIQ));
-
-            // 4. Возвращаем размер панели в норму
-            yield return StartCoroutine(AnimatePanelScale(statsPanelView.transform, 1.0f, 0.3f));
+            // Обновляем панель информации если слот выбран
+            if (_selectedSlot != null)
+                RefreshSlotInfo(_selectedSlot);
         }
 
-        // Анимация масштаба всей панели
-        private IEnumerator AnimatePanelScale(Transform target, float targetScale, float duration)
-        {
-            Vector3 startScale = target.localScale;
-            Vector3 endScale = Vector3.one * targetScale;
-            float elapsed = 0;
+        // ─── Анимация конца раунда ────────────────────────────────────────────
 
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                target.localScale = Vector3.Lerp(startScale, endScale, Mathf.SmoothStep(0, 1, elapsed / duration));
-                yield return null;
-            }
-            target.localScale = endScale;
+        public IEnumerator AnimateStatsRefresh(int newPopulation)
+        {
+            if (statsPanelView == null) yield break;
+
+            int.TryParse(
+                statsPanelView.populationText.text.Replace(",", "").Split('/')[0].Trim(),
+                out int oldPopulation);
+
+            yield return StartCoroutine(AnimateSingleStat(
+                statsPanelView.populationText, oldPopulation, newPopulation, isPopulation: true));
         }
 
-        private IEnumerator AnimateSingleStat(Text textElement, int startValue, int endValue, bool isPopulation = false)
+        private IEnumerator AnimateSingleStat(TextMeshProUGUI textElement, int startValue, int endValue,
+                                               bool isPopulation = false)
         {
-            // Определяем, изменилось ли значение
             bool hasChanged = startValue != endValue;
+            Color targetColor = hasChanged
+                ? (endValue > startValue ? increaseColor : decreaseColor)
+                : defaultColor;
 
-            // Если изменилось - выбираем цвет, если нет - оставляем белый
-            Color targetColor = hasChanged ? (endValue > startValue ? increaseColor : decreaseColor) : defaultColor;
-
-            Vector3 originalScale = Vector3.one; // Базовый размер
+            Vector3 originalScale = Vector3.one;
             Vector3 pulseTargetScale = originalScale * pulseScale;
-
             float elapsed = 0f;
 
             while (elapsed < animationTickDuration)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / animationTickDuration;
-                float smoothedT = Mathf.SmoothStep(0, 1, t);
+                float smoothT = Mathf.SmoothStep(0, 1, t);
+                float pulse = 1 - Mathf.Abs(0.5f - t) * 2;
 
-                // 1. Анимация пульсации (Scale) - Работает ВСЕГДА
-                float pulseCurve = 1 - Mathf.Abs(0.5f - t) * 2;
-                textElement.transform.localScale = Vector3.Lerp(originalScale, pulseTargetScale, pulseCurve);
+                textElement.transform.localScale =
+                    Vector3.Lerp(originalScale, pulseTargetScale, pulse);
 
-                // 2. Анимация числа и цвета - только если ЗНАЧЕНИЕ ИЗМЕНИЛОСЬ
                 if (hasChanged)
                 {
-                    int currentValue = (int)Mathf.Lerp(startValue, endValue, smoothedT);
-                    textElement.color = Color.Lerp(defaultColor, targetColor, pulseCurve);
-
-                    if (isPopulation)
-                        textElement.text = $"{currentValue:N0} / 1000";
-                    else
-                        textElement.text = currentValue.ToString();
+                    int current = (int)Mathf.Lerp(startValue, endValue, smoothT);
+                    textElement.color = Color.Lerp(defaultColor, targetColor, pulse);
+                    textElement.text = (isPopulation ? $"{current:N0}" : current.ToString()) + " / 1054";
                 }
                 else
                 {
-                    // Если значение не менялось, просто держим белый цвет
                     textElement.color = defaultColor;
                 }
 
                 yield return null;
             }
 
-            // Финальная установка значений
-            if (isPopulation)
-                textElement.text = $"{endValue:N0} / 1000";
-            else
-                textElement.text = endValue.ToString();
-
+            textElement.text = (isPopulation ? $"{endValue:N0}" : endValue.ToString()) + " / 1054";
             textElement.transform.localScale = originalScale;
             textElement.color = defaultColor;
         }
-
-        public void RefreshStats()
+        private static string UpgradeDisplayName(UpgradeType u) => u switch
         {
-            if (statsPanelView == null || ProfileManager.Instance == null) return;
-            PlayerProfile profile = ProfileManager.Instance.profile;
-            statsPanelView.SetStats(profile.totalPopulation, profile.baseIQ, profile.baseCharisma);
-        }
+            UpgradeType.DedInside => "Дед Инсайд",
+            UpgradeType.Baryga => "Барыга",
+            UpgradeType.Berserk => "Берсерк",
+            UpgradeType.Tusovshchik => "Тусовщик",
+            _ => u.ToString(),
+        };
     }
 }

@@ -1,0 +1,1045 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85073b2cc723c214d930db3f44b8ea60, type: 3}
+  m_Name: RunnerPatternDatabase
+  m_EditorClassIdentifier: 
+  patterns:
+  - patternName: Hype 0
+    patternWidth: 2
+    stickers:
+    - type: 0
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Hype 1
+    patternWidth: 2
+    stickers:
+    - type: 0
+      startLane: 1
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Hype 2
+    patternWidth: 2
+    stickers:
+    - type: 0
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Hype 3
+    patternWidth: 2
+    stickers:
+    - type: 0
+      startLane: 3
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Zig Zag Trap 1
+    patternWidth: 7
+    stickers:
+    - type: 0
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 1
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 2
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 3
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 2
+      xOffset: 4
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 1
+      xOffset: 5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 0
+      xOffset: 6
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 0
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Zig Zag Trap 2
+    patternWidth: 7
+    stickers:
+    - type: 0
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 2
+      xOffset: 2
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 2
+      xOffset: 4
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 1
+      xOffset: 5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 0
+      xOffset: 6
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 0
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 1
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Zig Zag Trap 3
+    patternWidth: 7
+    stickers:
+    - type: 0
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 2
+      xOffset: 2
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 2
+      xOffset: 4
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 0
+      xOffset: 6
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 0
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 1
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Zig Zag Trap 4
+    patternWidth: 7
+    stickers:
+    - type: 0
+      startLane: 3
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 1
+      xOffset: 2
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 1
+      xOffset: 4
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 6
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 0
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 2
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Raw 0
+    patternWidth: 1
+    stickers:
+    - type: 0
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Raw 1
+    patternWidth: 1
+    stickers:
+    - type: 1
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 1
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Raw 2
+    patternWidth: 1
+    stickers:
+    - type: 1
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Raw 3
+    patternWidth: 1
+    stickers:
+    - type: 1
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 3
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Labirint 1
+    patternWidth: 6
+    stickers:
+    - type: 1
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 3
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 3.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 3
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 4.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 0
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 0
+      xOffset: 4.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Labirint 2
+    patternWidth: 6
+    stickers:
+    - type: 0
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 3.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 3
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 4.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 0
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 0
+      xOffset: 4.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Labirint 3
+    patternWidth: 6
+    stickers:
+    - type: 1
+      startLane: 0
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 1
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 1
+      xOffset: 3.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 3
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 3
+      xOffset: 4.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 0
+      startLane: 0
+      xOffset: 3
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+    - type: 1
+      startLane: 2
+      xOffset: 4.5
+      movement:
+        isMoving: 0
+        laneAmplitude: 0
+        laneSpeed: 0
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Move 1
+    patternWidth: 3
+    stickers:
+    - type: 0
+      startLane: 1
+      xOffset: 0
+      movement:
+        isMoving: 1
+        laneAmplitude: 1
+        laneSpeed: 2
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0
+  - patternName: Move 2
+    patternWidth: 3
+    stickers:
+    - type: 0
+      startLane: 2
+      xOffset: 0
+      movement:
+        isMoving: 1
+        laneAmplitude: 1
+        laneSpeed: 2
+        lanePhase: 0
+        xAmplitude: 0
+        xSpeed: 0
+        xPhase: 0

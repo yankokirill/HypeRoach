@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Game.Core;
-using System.Linq;
 
 namespace Game.Base
 {
@@ -17,7 +17,6 @@ namespace Game.Base
         public CardDatabase mainDatabase;
 
         [Header("Hierarchy References")]
-        public Transform dragLayer;
         public Hand playerHand;
 
         [Header("Game Settings")]
@@ -26,9 +25,6 @@ namespace Game.Base
         public event Action<int> OnResourcesChanged;
         public event Action<GridSlot> OnSlotSelected;
         public event Action OnStatsChanged;
-
-        private List<CardData> deck = new List<CardData>();
-        private GridSlot selectedSlot;
 
         private void Awake()
         {
@@ -39,122 +35,207 @@ namespace Game.Base
         private void Start()
         {
             Initialize();
-            if (MusicManager.Instance != null)
-            {
-                MusicManager.Instance.StartBaseMusic();
-            }
+            MusicManager.Instance?.StartBaseMusic();
         }
 
         private void Initialize()
         {
             if (ProfileManager.Instance == null) return;
             var profile = ProfileManager.Instance.profile;
-            Debug.Log($"Рубли: {profile.currentResources}");
-
-            // Сначала строим колоду (нужна и для новой игры, и для DrawCard потом)
-            BuildDeck();
 
             if (profile.isFirstRun)
             {
-                Debug.Log("Первый запуск. Подготовка новой фермы...");
                 profile.isFirstRun = false;
                 profile.currentResources = startingResources;
-                // Раздаем 5 стартовых карт
-                for (int i = 0; i < 5; i++) DrawCard();
+                for (int i = 0; i < 3; i++) SpawnHandCard(mainDatabase.buildings[0]);
             }
             else
             {
-                Debug.Log("Загрузка сохраненной базы...");
                 LoadGridState(profile.placedCardsOnGrid);
                 LoadHandState(profile.hand);
+
+                bool wasDefeat = profile.lastRunResult == RunResult.Defeat;
+
+                // После поражения в раннере удаляем карту с центрального слота
+                if (wasDefeat)
+                {
+                    ClearCenterSlot();
+                    profile.centerCockroach = null;
+                    profile.lastRunResult = RunResult.None;
+                }
+
+                // Сразу после очистки слота проверяем условия поражения в игре
+                if (wasDefeat)
+                {
+                    CheckForDefeat();
+                }
             }
 
             OnResourcesChanged?.Invoke(GetCurrentResources());
         }
 
-        // --- ЛОГИКА КОЛОДЫ ---
-        private void BuildDeck()
+        // ─── Проверка на поражение ────────────────────────────────────────────
+
+        private void CheckForDefeat()
         {
-            if (mainDatabase == null) return;
-            deck.Clear();
-            foreach (var cardTemplate in mainDatabase.allCards)
+            bool hasCardsOnField = false;
+            GridSlot[] allSlots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None);
+            foreach (var slot in allSlots)
             {
-                deck.Add(cardTemplate.Clone());
+                if (!slot.IsEmpty)
+                {
+                    hasCardsOnField = true;
+                    break;
+                }
+            }
+
+            bool hasBuildingInHand = false;
+            if (playerHand != null)
+            {
+                foreach (var cardView in playerHand.GetCards())
+                {
+                    if (cardView != null && cardView.handData != null && cardView.handData.type == CardType.Building)
+                    {
+                        hasBuildingInHand = true;
+                        break;
+                    }
+                }
+            }
+
+            // Условие поражения: на поле нет ни одной карты И в руке нет карт типа Building (тараканов)
+            if (!hasCardsOnField && !hasBuildingInHand)
+            {
+                EndGameScreen.Instance?.ShowDefeat();
             }
         }
 
-        private CardData GetRandomCardData()
-        {
-            if (deck.Count == 0) return null;
-            return deck[UnityEngine.Random.Range(0, deck.Count)].Clone();
-        }
+        // ─── Колода ───────────────────────────────────────────────────────────
 
-        public void DrawCard()
-        {
-            CardData data = GetRandomCardData();
-            if (data != null) DrawSpecificCard(data);
-        }
-
-        public void DrawSpecificCard(CardData cardData)
+        public void SpawnHandCard(HandCardData data)
         {
             if (playerHand.Count >= playerHand.maxHandSize) return;
-            CardView newCard = Instantiate(cardPrefab, playerHand.handParent);
-            newCard.Initialize(cardData);
-            playerHand.AddCard(newCard);
+            CardView card = Instantiate(cardPrefab, playerHand.handParent);
+            card.InitAsHandCard(data);
+            playerHand.AddCard(card);
         }
 
-        // --- СОХРАНЕНИЕ / ЗАГРУЗКА ---
+        // ─── Сохранение / загрузка ────────────────────────────────────────────
+
         public void SaveState()
         {
             if (ProfileManager.Instance == null) return;
             var profile = ProfileManager.Instance.profile;
 
-            // Сохраняем сетку
+            GridSlot[] slots = GetSortedSlots();
             profile.placedCardsOnGrid.Clear();
-            // Сортируем слоты по позиции, чтобы порядок всегда был одинаковым
-            GridSlot[] slots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None)
-                                .OrderBy(s => s.transform.position.y)
-                                .ThenBy(s => s.transform.position.x).ToArray();
-
             foreach (var slot in slots)
             {
-                profile.placedCardsOnGrid.Add(slot.IsEmpty ? null : slot.GetCard().cardData);
+                if (slot.IsEmpty)
+                {
+                    profile.placedCardsOnGrid.Add(null);
+                }
+                else
+                {
+                    FieldCard fc = slot.GetCard().fieldData;
+                    profile.placedCardsOnGrid.Add(new SavedFieldCard
+                    {
+                        cardID = fc.Source.cardID,
+                        level = fc.Level,
+                        upgrades = new List<UpgradeType>(fc.Upgrades),
+                        totalGreen = fc.TotalGreen,
+                        totalWhite = fc.TotalWhite,
+                        totalYellow = fc.TotalYellow,
+                    });
+                }
             }
 
-            // Сохраняем руку
             profile.hand.Clear();
             foreach (var cardView in playerHand.GetCards())
-            {
-                profile.hand.Add(cardView.cardData);
-            }
+                profile.hand.Add(cardView.handData.cardID);
+
+            // Сохраняем таракана с центрального слота (1,1) для раннера
+            profile.centerCockroach = FindCenterCockroach();
 
             Debug.Log("Состояние базы сохранено!");
         }
 
-        private void LoadGridState(List<CardData> savedCards)
+        private void LoadGridState(List<SavedFieldCard> savedCards)
         {
-            GridSlot[] slots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None)
-                                .OrderBy(s => s.transform.position.y)
-                                .ThenBy(s => s.transform.position.x).ToArray();
+            GridSlot[] slots = GetSortedSlots();
 
             for (int i = 0; i < Mathf.Min(savedCards.Count, slots.Length); i++)
             {
-                if (savedCards[i] != null)
+                SavedFieldCard saved = savedCards[i];
+                if (saved == null) continue;
+
+                HandCardData source = mainDatabase.FindBuilding(saved.cardID);
+                if (source == null) continue;
+
+                FieldCard fc = FieldCard.FromSave(source, saved.level, saved.upgrades,
+                    saved.totalGreen, saved.totalWhite, saved.totalYellow);
+                CardView card = Instantiate(cardPrefab, slots[i].transform);
+                slots[i].PlaceCard(card, fc);
+            }
+        }
+
+        private void LoadHandState(List<string> savedCardIDs)
+        {
+            foreach (string id in savedCardIDs)
+            {
+                HandCardData data = mainDatabase.FindCard(id);
+                if (data != null) SpawnHandCard(data);
+            }
+        }
+
+        private GridSlot[] GetSortedSlots() =>
+            FindObjectsByType<GridSlot>(FindObjectsSortMode.None)
+                .OrderBy(s => s.transform.position.y)
+                .ThenBy(s => s.transform.position.x)
+                .ToArray();
+
+        private SavedFieldCard FindCenterCockroach()
+        {
+            GridSlot[] allSlots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None);
+            foreach (var slot in allSlots)
+            {
+                if (slot.gridX == 1 && slot.gridY == 1 && !slot.IsEmpty)
                 {
-                    CardView newCard = Instantiate(cardPrefab, slots[i].transform);
-                    newCard.Initialize(savedCards[i]);
-                    slots[i].PlaceCard(newCard);
+                    FieldCard fc = slot.GetCard().fieldData;
+                    return new SavedFieldCard
+                    {
+                        cardID = fc.Source.cardID,
+                        level = fc.Level,
+                        upgrades = new List<UpgradeType>(fc.Upgrades),
+                        totalGreen = fc.TotalGreen,
+                        totalWhite = fc.TotalWhite,
+                        totalYellow = fc.TotalYellow,
+                    };
+                }
+            }
+            return null; // слот пустой
+        }
+
+        private void ClearCenterSlot()
+        {
+            GridSlot[] allSlots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None);
+            foreach (var slot in allSlots)
+            {
+                if (slot.gridX == 1 && slot.gridY == 1 && !slot.IsEmpty)
+                {
+                    Destroy(slot.GetCard().gameObject);
+                    slot.RemoveCard();
+                    NotifyStatsChanged();
+                    break;
                 }
             }
         }
 
-        private void LoadHandState(List<CardData> savedCards)
-        {
-            foreach (var data in savedCards) DrawSpecificCard(data);
-        }
+        // ─── Экономика ────────────────────────────────────────────────────────
 
-        // --- ЭКОНОМИКА И СОБЫТИЯ ---
-        public int GetCurrentResources() => ProfileManager.Instance != null ? ProfileManager.Instance.profile.currentResources : startingResources;
+        public int GetCurrentResources() =>
+            ProfileManager.Instance != null
+                ? ProfileManager.Instance.profile.currentResources
+                : startingResources;
 
         public bool CanAfford(int amount) => GetCurrentResources() >= amount;
 
@@ -173,13 +254,16 @@ namespace Game.Base
             return true;
         }
 
-        public void OnCardPlaced(CardView card, GridSlot slot) => playerHand.RemoveCard(card);
+        // ─── События ──────────────────────────────────────────────────────────
 
-        public void OnSlotClicked(GridSlot slot)
+        public void OnCardPlaced(CardView card, GridSlot slot)
         {
-            selectedSlot = slot;
-            OnSlotSelected?.Invoke(slot);
+            playerHand.RemoveCard(card);
+            NotifyStatsChanged();
         }
+
+        public void OnSlotClicked(GridSlot slot) =>
+            OnSlotSelected?.Invoke(slot);
 
         public void NotifyStatsChanged() => OnStatsChanged?.Invoke();
     }

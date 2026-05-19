@@ -1,8 +1,8 @@
-﻿using Game.Core;
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Game.Core;
 
 namespace Game.Base
 {
@@ -18,82 +18,92 @@ namespace Game.Base
         [Header("One-time Bonus Button")]
         [SerializeField] private Button getBonusButton;
 
+        [Header("Start Race Button")]
+        [SerializeField] private Button startButton;
+
         private void Awake()
         {
             if (Instance == null) Instance = this;
             else Destroy(gameObject);
         }
 
+        private void Start()
+        {
+            if (GameManager.Instance != null)
+                GameManager.Instance.OnStatsChanged += RefreshStartButton;
+
+            RefreshStartButton();
+        }
+
+        private void OnDestroy()
+        {
+            if (GameManager.Instance != null)
+                GameManager.Instance.OnStatsChanged -= RefreshStartButton;
+        }
+
+        private void RefreshStartButton()
+        {
+            if (startButton == null) return;
+            bool hasCockroach = IsCenterSlotFilled();
+            startButton.interactable = hasCockroach;
+        }
+
+        private bool IsCenterSlotFilled()
+        {
+            GridSlot[] allSlots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None);
+            foreach (var slot in allSlots)
+                if (slot.gridX == 1 && slot.gridY == 1)
+                    return !slot.IsEmpty;
+            return false;
+        }
+
         public void ClaimBonusDraft()
         {
             if (ProfileManager.Instance == null || draftManager == null) return;
-
             DisableBonusButton();
-            Debug.Log("Запуск бонусного выбора карт!");
             draftManager.StartDraft();
         }
 
         private void DisableBonusButton()
         {
-            if (getBonusButton != null)
-            {
-                getBonusButton.interactable = false;
-                Text btnText = getBonusButton.GetComponentInChildren<Text>();
-                if (btnText != null) btnText.text = "ПОЛУЧЕНО";
-            }
+            if (getBonusButton == null) return;
+            getBonusButton.interactable = false;
+            var txt = getBonusButton.GetComponentInChildren<Text>();
+            if (txt != null) txt.text = "ПОЛУЧЕНО";
         }
 
         public void ProcessEndOfRound()
         {
             SceneTransitionManager.Instance.BlockScreen();
-            // Запускаем полную последовательность действий
             StartCoroutine(EndOfRoundSequence());
         }
 
         private IEnumerator EndOfRoundSequence()
         {
-            // 1. ПРОВЕРКИ
             if (ProfileManager.Instance == null || uiManager == null) yield break;
+            ProfileManager.Instance.profile.dayCount += 1;
             PlayerProfile profile = ProfileManager.Instance.profile;
 
-            // 2. НАЧИНАЕМ ПРЕДЗАГРУЗКУ СЦЕНЫ В ФОНЕ
-            if (SceneTransitionManager.Instance != null)
-                SceneTransitionManager.Instance.PreloadScene("Race");
+            if (profile.dayCount % 5 != 0)
+                SceneTransitionManager.Instance?.PreloadScene("Race 1");
+            else
+                SceneTransitionManager.Instance?.PreloadScene("Race");
 
-            // 3. РАССЧИТЫВАЕМ НОВЫЕ СТАТЫ
-            int roundPopulation = 0;
-            int newIQ = 0;
-            int newCharisma = 0;
-
-            GridSlot[] allSlots = FindObjectsByType<GridSlot>(FindObjectsSortMode.None);
-            foreach (GridSlot slot in allSlots)
-            {
-                if (!slot.IsEmpty && slot.GetCard() != null)
-                {
-                    CardData building = slot.GetCard().cardData;
-                    if (building == null) continue;
-                    roundPopulation += building.CurrentPopulationIncome;
-                    newIQ += building.CurrentIQBuff;
-                    newCharisma += building.CurrentCharismaBuff;
-                }
-            }
-            int finalPopulation = profile.totalPopulation + roundPopulation;
-
-            profile.totalPopulation = finalPopulation;
-            profile.baseIQ = newIQ;
-            profile.baseCharisma = newCharisma;
+            profile.totalPopulation += profile.populationGrowth;
             profile.ValidateStats();
 
-            // 4. ЗАПУСКАЕМ АНИМАЦИЮ В UI И ЖДЕМ ЕЕ ОКОНЧАНИЯ
-            yield return uiManager.AnimateStatsRefresh(profile.totalPopulation, profile.baseIQ, profile.baseCharisma);
+            yield return uiManager.AnimateStatsRefresh(profile.totalPopulation);
 
-            // gameManager.AddResources(roundResources);
+            GameManager.Instance?.SaveState();
 
-            // 5. СОХРАНЯЕМ ИГРУ
-            if (GameManager.Instance != null)
-                GameManager.Instance.SaveState();
+            // Проверка победы
+            if (profile.totalPopulation >= 1054)
+            {
+                SceneTransitionManager.Instance?.BlockScreen();
+                EndGameScreen.Instance?.ShowVictory();
+                yield break;
+            }
 
-            // 6. ЗАПУСКАЕМ ПЕРЕХОД
             if (SceneTransitionManager.Instance != null)
                 SceneTransitionManager.Instance.CommitTransition();
             else

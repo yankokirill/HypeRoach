@@ -218,8 +218,8 @@ namespace Game.Race
         private CocroachStats GetCockroachStats(Cockroach racer)
         {
             bool isPlayer = racer is PlayerCockroach;
-            int iq = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.baseIQ : 0;
-            int charisma = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.baseCharisma : 0;
+            int iq = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.currentIQ : 0;
+            int charisma = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.currentCharisma : 0;
             Vector3 spawnPos = racer.transform.position;
 
             return new CocroachStats
@@ -239,8 +239,6 @@ namespace Game.Race
             bool effectApplied = true;
 
             // Ссылки для сокращения кода
-            int iq = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.baseIQ : 0;
-            int charisma = isPlayer && ProfileManager.Instance != null ? ProfileManager.Instance.profile.baseCharisma : 0;
             Vector3 spawnPos = racer.transform.position;
 
             if (sticker.CurrentType == StickerType.Hype)

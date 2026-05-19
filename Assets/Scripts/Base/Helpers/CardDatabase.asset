@@ -12,7 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13f25dda2ca8d7c449ca3045fdbccfc1, type: 3}
   m_Name: CardDatabase
   m_EditorClassIdentifier: 
-  allCards:
-  - {fileID: 11400000, guid: 3ffb0bc0ea4a7134eb4cf6fcbfc6afac, type: 2}
-  - {fileID: 11400000, guid: d45f98a777ae4114c926c6b44940719a, type: 2}
-  - {fileID: 11400000, guid: 9ba0b20fe653f5e4d8e6cf401db8bc81, type: 2}
+  buildings:
+  - {fileID: 11400000, guid: bc06658329b60a74db338aefe3d45b1f, type: 2}
+  - {fileID: 11400000, guid: fd291096dba667b4d8903650b04b3210, type: 2}
+  - {fileID: 11400000, guid: bc2f8e7df2ce42341be794ce44f98616, type: 2}
+  upgradeCards:
+  - {fileID: 11400000, guid: 8cf909751b796e040a3e76036aa403c3, type: 2}
+  - {fileID: 11400000, guid: 3f948e8d8da574449b328127e49cd7bc, type: 2}
+  - {fileID: 11400000, guid: 90f1a588f92653a4f97909190a711fd2, type: 2}
+  - {fileID: 11400000, guid: b8ec1d489f154094694e3b45db82ce56, type: 2}

@@ -1,16 +1,16 @@
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 
 namespace Game.Base
 {
     public class InfoPanelView : MonoBehaviour
     {
         [Header("Text Fields")]
-        public Text titleText;
-        public Text descriptionText;
+        public TextMeshProUGUI titleText;
+        public TextMeshProUGUI descriptionText;
 
         [Header("Default Text")]
-        public string defaultTitle = "Выберите здание...";
+        public string defaultTitle = "Выберите таракана...";
         public string defaultDescription = "";
 
         public void SetTitle(string title)
